@@ -33,7 +33,7 @@ const validationSchema = yup.object().shape({
     requestedAnalysis: yup.string().required('Seleccione un análisis solicitado'),
 });
 
-const FormularioInformes = () => {
+const FormularioIngresos = () => {
     const {
         handleSubmit,
         control,
@@ -41,17 +41,18 @@ const FormularioInformes = () => {
     } = useForm({
         resolver: yupResolver(validationSchema),
         defaultValues: {
-            requestedAnalysis: 'Hemograma', // Valor predeterminado para análisis solicitado
+            requestedAnalysis: 'Perfil General Básico', // Valor predeterminado para análisis solicitado
         },
     });
 
     const options = {
+        meansofpayment: ['Efectivo', 'Mercado Pago'],
         professionals: ['Dr. Pérez', 'Dra. López', 'Dr. Sánchez'],
         veterinaries: ['Veterinaria Central', 'AnimalCare', 'Healthy Pets'],
         breeds: ['Labrador', 'Pastor Alemán', 'Beagle'],
-        species: ['Canina', 'Felina', 'Aves'],
+        species: ['Canina', 'Felina'],
         sexes: ['Macho', 'Hembra'],
-        analyses: ['Hemograma', 'Bioquímica', 'Urianálisis'],
+        analyses: ['Perfil General Básico', 'Perfil General Completo', 'Hemograma'],
     };
 
     const onSubmit = (data) => {
@@ -84,6 +85,20 @@ const FormularioInformes = () => {
             }}
         >
             <Controller
+                name="protocolNumber"
+                control={control}
+                render={({ field }) => (
+                    <TextField
+                        {...field}
+                        label="Número de Protocolo"
+                        error={!!errors.protocolNumber}
+                        helperText={errors.protocolNumber?.message}
+                        fullWidth
+                    />
+                )}
+            />
+
+            <Controller
                 name="date"
                 control={control}
                 render={({ field }) => (
@@ -114,21 +129,12 @@ const FormularioInformes = () => {
                 )}
             />
 
-            <Controller
-                name="protocolNumber"
-                control={control}
-                render={({ field }) => (
-                    <TextField
-                        {...field}
-                        label="Número de Protocolo"
-                        error={!!errors.protocolNumber}
-                        helperText={errors.protocolNumber?.message}
-                        fullWidth
-                    />
-                )}
-            />
-
             {[
+                {
+                    field: 'meansofpayment',
+                    label: 'Medio de Pago',
+                    options: options.meansofpayment,
+                },                 
                 {
                     field: 'professional',
                     label: 'Profesional',
@@ -299,10 +305,10 @@ const FormularioInformes = () => {
                 sx={{ backgroundColor: '#000', color: '#fff', '&:hover': { backgroundColor: '#333' } }} 
                 fullWidth
             >
-                Enviar y Generar PDF
+                Subir Orden
             </Button>
         </Box>
     );
 };
 
-export default FormularioInformes;
+export default FormularioIngresos;

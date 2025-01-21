@@ -38,12 +38,6 @@ const Sidebar = () => {
                             </ListItemIcon>
                             <ListItemText primary="Formulario de ingreso" sx={{ color: 'white' }} />
                         </ListItem>
-                        <ListItem button component={Link} to="/dashboard/ingresos/tabla" sx={{ pl: 4 }}>
-                            <ListItemIcon sx={{ color: 'white' }}>
-                                <DescriptionIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Tabla de registros" sx={{ color: 'white' }} />
-                        </ListItem>
                     </List>
                 </Collapse>
 
@@ -61,12 +55,6 @@ const Sidebar = () => {
                 </ListItem>
                 <Collapse in={openInformes} timeout="auto" unmountOnExit>
                     <List component="div" disablePadding>
-                        <ListItem button component={Link} to="/dashboard/informes/formulario" sx={{ pl: 4 }}>
-                            <ListItemIcon sx={{ color: 'white' }}>
-                                <AssignmentIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Formulario de informes" sx={{ color: 'white' }} />
-                        </ListItem>
                         <ListItem button component={Link} to="/dashboard/informes/tabla" sx={{ pl: 4 }}>
                             <ListItemIcon sx={{ color: 'white' }}>
                                 <DescriptionIcon />
