@@ -80,18 +80,7 @@ const FormularioIngresos = () => {
                 console.error('Error fetching data:', error);
             }
         };
-    const options = {
-        meansofpayment: ['Efectivo', 'Mercado Pago'],
-        professionals: ['Dr. Pérez', 'Dra. López', 'Dr. Sánchez'],
-        veterinaries: ['Veterinaria Central', 'AnimalCare', 'Healthy Pets'],
-        breeds: ['Labrador', 'Pastor Alemán', 'Beagle'],
-        species: ['Canina', 'Felina'],
-        sexes: ['Macho', 'Hembra'],
-        analyses: ['Perfil General Básico', 'Perfil General Completo', 'Hemograma'],
-    };
-
-        fetchData();
-    }, []);
+    
     // const options = {
     //     professionals: ['Dr. Pérez', 'Dra. López', 'Dr. Sánchez'],
     //     veterinaries: ['Veterinaria Central', 'AnimalCare', 'Healthy Pets'],
@@ -208,6 +197,7 @@ const FormularioIngresos = () => {
                     />
                 )}
             />
+
 
             {/* {[
             {[
@@ -453,6 +443,7 @@ const FormularioIngresos = () => {
             </Button>
         </Box>
     );
-};
+});
+}
 
 export default FormularioIngresos;
