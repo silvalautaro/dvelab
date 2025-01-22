@@ -1,9 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { Box, TextField, Button, Autocomplete, MenuItem } from '@mui/material';
+import { Box, TextField, Button, Autocomplete } from '@mui/material';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
-import jsPDF from 'jspdf';
 import axios from 'axios';
 
 // Esquema de validación usando Yup
@@ -33,6 +33,7 @@ const validationSchema = yup.object().shape({
     age: yup.number().typeError('Debe ser un número').required('La edad es requerida'),
     requestedAnalysis: yup.string().required('Seleccione un análisis solicitado'),
 });
+
 const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
 const FormularioIngresos = () => {
@@ -42,10 +43,11 @@ const FormularioIngresos = () => {
         formState: { errors },
     } = useForm({
         resolver: yupResolver(validationSchema),
-        defaultValues: {
-            requestedAnalysis: 'Perfil General Básico', // Valor predeterminado para análisis solicitado
-        },
+        // defaultValues: {
+        //     requestedAnalysis: 'Perfil General Básico', // Valor predeterminado para análisis solicitado
+        // },
     });
+
     const [isOtherVeterinaria, setIsOtherVeterinaria] = useState(false);
     const [options, setOptions] = useState({
         professionals: [],
@@ -80,23 +82,11 @@ const FormularioIngresos = () => {
                 console.error('Error fetching data:', error);
             }
         };
-    
-    // const options = {
-    //     professionals: ['Dr. Pérez', 'Dra. López', 'Dr. Sánchez'],
-    //     veterinaries: ['Veterinaria Central', 'AnimalCare', 'Healthy Pets'],
-    //     breeds: ['Labrador', 'Pastor Alemán', 'Beagle'],
-    //     species: ['Canina', 'Felina', 'Aves'],
-    //     sexes: ['Macho', 'Hembra'],
-    //     analyses: ['Hemograma', 'Bioquímica', 'Urianálisis'],
-    // };
-    
+
+        fetchData();
+    }, []);
+
     const onSubmit = async (data) => {
-        // const doc = new jsPDF();
-        // doc.text('Informe de Análisis', 20, 20);
-        // Object.keys(data).forEach((key, index) => {
-        //     doc.text(`${key}: ${data[key]}`, 20, 30 + index * 10);
-        // });
-        // doc.save('informe.pdf');
         const datosParaEnviar = {
             fecha: data.date ? new Date(data.date).toISOString().split('T')[0] : '',
             importe: data.moneySent,
@@ -111,15 +101,16 @@ const FormularioIngresos = () => {
             edad: data.age || 0,
             nuevoVeterinaria: data.nuevoVeterinaria || '',
             estudio: data.requestedAnalysis ,
-          };
+        };
         
-          try {
+        try {
             const response = await axios.post(`${backendUrl}/protocolos`, datosParaEnviar);
             alert('Datos enviados correctamente');
             console.log('Respuesta del servidor:', response.data);
-          } catch (error) {
+            
+        } catch (error) {
             console.error('Error al enviar los datos:', error);
-          }
+        }
     };
 
     return (
@@ -185,62 +176,6 @@ const FormularioIngresos = () => {
             />
 
             <Controller
-                name="protocolNumber"
-                control={control}
-                render={({ field }) => (
-                    <TextField
-                        {...field}
-                        label="Número de Protocolo"
-                        error={!!errors.protocolNumber}
-                        helperText={errors.protocolNumber?.message}
-                        fullWidth
-                    />
-                )}
-            />
-
-
-            {/* {[
-            {[
-                {
-                    field: 'meansofpayment',
-                    label: 'Medio de Pago',
-                    options: options.meansofpayment,
-                },                 
-                {
-                    field: 'professional',
-                    label: 'Profesional',
-                    options: options.professionals,
-                },
-                {
-                    field: 'veterinary',
-                    label: 'Veterinaria',
-                    options: options.veterinaries,
-                },
-            ].map(({ field, label, options }) => (
-                <Controller
-                    key={field}
-                    name={field}
-                    control={control}
-                    render={({ field: controllerField }) => (
-                        <Autocomplete
-                            {...controllerField}
-                            options={options}
-                            onChange={(_, value) => controllerField.onChange(value || '')}
-                            freeSolo
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label={label}
-                                    error={!!errors[field]}
-                                    helperText={errors[field]?.message}
-                                    fullWidth
-                                />
-                            )}
-                        />
-                    )}
-                />
-            ))} */}
-            <Controller
                 name="professional"
                 control={control}
                 render={({ field }) => (
@@ -260,6 +195,7 @@ const FormularioIngresos = () => {
                     />
                 )}
             />
+
             <Controller
                 name="veterinary"
                 control={control}
@@ -288,6 +224,7 @@ const FormularioIngresos = () => {
                     />
                 )}
             />
+
             {isOtherVeterinaria && (
                 <Controller
                     name="nuevoVeterinaria"
@@ -353,7 +290,6 @@ const FormularioIngresos = () => {
                 )}
             />
 
-            
             <Controller
                 name="species"
                 control={control}
@@ -411,7 +347,7 @@ const FormularioIngresos = () => {
                 )}
             />
 
-            <Controller
+        <Controller
                 name="requestedAnalysis"
                 control={control}
                 render={({ field }) => (
@@ -431,8 +367,6 @@ const FormularioIngresos = () => {
                     />
                 )}
             />
-
-            {/* Botón de envío */}
             <Button 
                 type="submit" 
                 variant="contained" 
@@ -443,7 +377,6 @@ const FormularioIngresos = () => {
             </Button>
         </Box>
     );
-});
-}
+};
 
 export default FormularioIngresos;
