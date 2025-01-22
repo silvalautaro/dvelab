@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { Box, TextField, Button, Autocomplete, MenuItem } from '@mui/material';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import jsPDF from 'jspdf';
+import axios from 'axios';
 
 // Esquema de validación usando Yup
 const validationSchema = yup.object().shape({
@@ -32,7 +33,7 @@ const validationSchema = yup.object().shape({
     age: yup.number().typeError('Debe ser un número').required('La edad es requerida'),
     requestedAnalysis: yup.string().required('Seleccione un análisis solicitado'),
 });
-
+const backendUrl = process.env.REACT_APP_BACKEND_URL;
 const FormularioInformes = () => {
     const {
         handleSubmit,
@@ -44,26 +45,82 @@ const FormularioInformes = () => {
             requestedAnalysis: 'Hemograma', // Valor predeterminado para análisis solicitado
         },
     });
+    const [isOtherVeterinaria, setIsOtherVeterinaria] = useState(false);
+    const [options, setOptions] = useState({
+        professionals: [],
+        veterinaries: [],
+        breeds: [],
+        species: [],
+        sexes: [],
+        analyses: [],
+    });
 
-    const options = {
-        professionals: ['Dr. Pérez', 'Dra. López', 'Dr. Sánchez'],
-        veterinaries: ['Veterinaria Central', 'AnimalCare', 'Healthy Pets'],
-        breeds: ['Labrador', 'Pastor Alemán', 'Beagle'],
-        species: ['Canina', 'Felina', 'Aves'],
-        sexes: ['Macho', 'Hembra'],
-        analyses: ['Hemograma', 'Bioquímica', 'Urianálisis'],
-    };
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [professionals, veterinaries, breeds, species, sexes, analyses] = await Promise.all([
+                    axios.get(`${backendUrl}/profesionales`),
+                    axios.get(`${backendUrl}/veterinarias`),
+                    axios.get(`${backendUrl}/razas`),
+                    axios.get(`${backendUrl}/especies`),
+                    axios.get(`${backendUrl}/generos`),
+                    axios.get(`${backendUrl}/estudios`),
+                ]);
+                
+                setOptions({
+                    professionals: Array.isArray(professionals.data.result) ? professionals.data.result : [],
+                    veterinaries: Array.isArray(veterinaries.data.result) ? veterinaries.data.result : [],
+                    breeds: Array.isArray(breeds.data.result) ? breeds.data.result : [],
+                    species: Array.isArray(species.data.result) ? species.data.result : [],
+                    sexes: Array.isArray(sexes.data.result) ? sexes.data.result : [],
+                    analyses: Array.isArray(analyses.data.result) ? analyses.data.result : []
+                });
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
 
-    const onSubmit = (data) => {
-        const doc = new jsPDF();
-        doc.text('Informe de Análisis', 20, 20);
-        Object.keys(data).forEach((key, index) => {
-            doc.text(`${key}: ${data[key]}`, 20, 30 + index * 10);
-        });
-        doc.save('informe.pdf');
-
-        console.log('Datos enviados:', data);
-        alert('Formulario enviado y PDF generado!');
+        fetchData();
+    }, []);
+    // const options = {
+    //     professionals: ['Dr. Pérez', 'Dra. López', 'Dr. Sánchez'],
+    //     veterinaries: ['Veterinaria Central', 'AnimalCare', 'Healthy Pets'],
+    //     breeds: ['Labrador', 'Pastor Alemán', 'Beagle'],
+    //     species: ['Canina', 'Felina', 'Aves'],
+    //     sexes: ['Macho', 'Hembra'],
+    //     analyses: ['Hemograma', 'Bioquímica', 'Urianálisis'],
+    // };
+    
+    const onSubmit = async (data) => {
+        // const doc = new jsPDF();
+        // doc.text('Informe de Análisis', 20, 20);
+        // Object.keys(data).forEach((key, index) => {
+        //     doc.text(`${key}: ${data[key]}`, 20, 30 + index * 10);
+        // });
+        // doc.save('informe.pdf');
+        const datosParaEnviar = {
+            fecha: data.date ? new Date(data.date).toISOString().split('T')[0] : '',
+            importe: data.moneySent,
+            id_protocolo: data.protocolNumber,
+            profesional: data.professional ,
+            veterinaria: data.veterinary ,
+            nombre: data.patient ,
+            especie: data.species ,
+            raza: data.breed ,
+            sexo: data.sex ,
+            tutor: data.tutor || '',
+            edad: data.age || 0,
+            nuevoVeterinaria: data.nuevoVeterinaria || '',
+            estudio: data.requestedAnalysis ,
+          };
+        
+          try {
+            const response = await axios.post(`${backendUrl}/protocolos`, datosParaEnviar);
+            alert('Datos enviados correctamente');
+            console.log('Respuesta del servidor:', response.data);
+          } catch (error) {
+            console.error('Error al enviar los datos:', error);
+          }
     };
 
     return (
@@ -128,7 +185,7 @@ const FormularioInformes = () => {
                 )}
             />
 
-            {[
+            {/* {[
                 {
                     field: 'professional',
                     label: 'Profesional',
@@ -162,7 +219,70 @@ const FormularioInformes = () => {
                         />
                     )}
                 />
-            ))}
+            ))} */}
+            <Controller
+                name="professional"
+                control={control}
+                render={({ field }) => (
+                    <Autocomplete
+                        {...field}
+                        options={options.professionals}
+                        getOptionLabel={(option) => option.nombre || option}
+                        onChange={(_, value) => field.onChange(value ? value.id_profesional : '')}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Profesional"
+                                error={!!errors.professional}
+                                helperText={errors.professional?.message}
+                            />
+                        )}
+                    />
+                )}
+            />
+            <Controller
+                name="veterinary"
+                control={control}
+                render={({ field }) => (
+                    <Autocomplete
+                        {...field}
+                        options={[...options.veterinaries, 'Otro']}
+                        getOptionLabel={(option) => option.nombre || option}
+                        onChange={(_, value) => {
+                            if (value === 'Otro') {
+                                setIsOtherVeterinaria(true);
+                                field.onChange('');
+                            } else {
+                                setIsOtherVeterinaria(false);
+                                field.onChange(value ? value.id_veterinaria : '');
+                            }
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Veterinaria"
+                                error={!!errors.professional}
+                                helperText={errors.professional?.message}
+                            />
+                        )}
+                    />
+                )}
+            />
+            {isOtherVeterinaria && (
+                <Controller
+                    name="nuevoVeterinaria"
+                    control={control}
+                    render={({ field }) => (
+                        <TextField
+                            {...field}
+                            label="Nombre de la nueva veterinaria"
+                            fullWidth
+                            error={!!errors.nuevoVeterinaria}
+                            helperText={errors.nuevoVeterinaria?.message}
+                        />
+                    )}
+                />
+            )}
 
             <Controller
                 name="tutor"
@@ -199,15 +319,36 @@ const FormularioInformes = () => {
                     <Autocomplete
                         {...field}
                         options={options.breeds}
-                        onChange={(_, value) => field.onChange(value || '')}
-                        freeSolo
+                        getOptionLabel={(option) => option.nombre || ''}
+                        onChange={(_, value) => field.onChange(value.id_raza || '')}
                         renderInput={(params) => (
                             <TextField
                                 {...params}
                                 label="Raza"
                                 error={!!errors.breed}
                                 helperText={errors.breed?.message}
-                                fullWidth
+                            />
+                        )}
+                    />
+                )}
+            />
+
+            
+            <Controller
+                name="species"
+                control={control}
+                render={({ field }) => (
+                    <Autocomplete
+                        {...field}
+                        options={options.species}
+                        getOptionLabel={(option) => option.tipo || ''}
+                        onChange={(_, value) => field.onChange(value?.id_especie || '')}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Especie"
+                                error={!!errors.species}
+                                helperText={errors.species?.message}
                             />
                         )}
                     />
@@ -215,44 +356,23 @@ const FormularioInformes = () => {
             />
 
             <Controller
-                name="species"
-                control={control}
-                render={({ field }) => (
-                    <TextField
-                        {...field}
-                        label="Especie"
-                        select
-                        error={!!errors.species}
-                        helperText={errors.species?.message}
-                        fullWidth
-                    >
-                        {options.species.map((option, index) => (
-                            <MenuItem key={index} value={option}>
-                                {option}
-                            </MenuItem>
-                        ))}
-                    </TextField>
-                )}
-            />
-
-            <Controller
                 name="sex"
                 control={control}
                 render={({ field }) => (
-                    <TextField
+                    <Autocomplete
                         {...field}
-                        label="Sexo"
-                        select
-                        error={!!errors.sex}
-                        helperText={errors.sex?.message}
-                        fullWidth
-                    >
-                        {options.sexes.map((option, index) => (
-                            <MenuItem key={index} value={option}>
-                                {option}
-                            </MenuItem>
-                        ))}
-                    </TextField>
+                        options={options.sexes}
+                        getOptionLabel={(option) => option.sexo || ''}
+                        onChange={(_, value) => field.onChange(value?.id_sexo || '')}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Sexo"
+                                error={!!errors.sex}
+                                helperText={errors.sex?.message}
+                            />
+                        )}
+                    />
                 )}
             />
 
@@ -275,20 +395,20 @@ const FormularioInformes = () => {
                 name="requestedAnalysis"
                 control={control}
                 render={({ field }) => (
-                    <TextField
+                    <Autocomplete
                         {...field}
-                        label="Análisis solicitado"
-                        select
-                        error={!!errors.requestedAnalysis}
-                        helperText={errors.requestedAnalysis?.message}
-                        fullWidth
-                    >
-                        {options.analyses.map((option, index) => (
-                            <MenuItem key={index} value={option}>
-                                {option}
-                            </MenuItem>
-                        ))}
-                    </TextField>
+                        options={options.analyses}
+                        getOptionLabel={(option) => option.estudio || ''}
+                        onChange={(_, value) => field.onChange(value?.id_estudio || '')}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Análisis solicitado"
+                                error={!!errors.requestedAnalysis}
+                                helperText={errors.requestedAnalysis?.message}
+                            />
+                        )}
+                    />
                 )}
             />
 
