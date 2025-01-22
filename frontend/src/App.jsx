@@ -6,7 +6,6 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import FormularioIngresos from './pages/FormularioIngresos';
 import TablaRegistros from './pages/TablaRegistros';
-import FormularioInformes from './pages/FormularioInformes';
 
 const App = () => {
     // Simula el estado de autenticación
@@ -38,8 +37,6 @@ const App = () => {
                                             {/* Páginas del dashboard */}
                                             <Route path="/" element={<QuotesPage />} />
                                             <Route path="ingresos/formulario" element={<FormularioIngresos />} />
-                                            <Route path="ingresos/tabla" element={<TablaRegistros />} />
-                                            <Route path="informes/formulario" element={<FormularioInformes />} />
                                             <Route path="informes/tabla" element={<TablaRegistros />} />
                                         </Routes>
                                     </div>
@@ -52,7 +49,7 @@ const App = () => {
                 )}
 
                 {/* Ruta por defecto */}
-                <Route path="*" element={<Navigate to="/dashboard" />} />
+                <Route path="*" element={<Navigate to="/login" />} />
             </Routes>
         </Router>
     );
