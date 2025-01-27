@@ -14,6 +14,8 @@ const observacionRoutes = require('./observacionRoutes');
 const sexoRoutes = require('./sexoRoutes');
 const archivoRoutes = require('./archivoRoutes');
 const estadoRoutes = require('./estadoRoutes');
+const categoriaRoutes = require('./categoriaRoutes');
+const precioRoutes = require('./precioRoutes');
 
 module.exports = {
     especieRoutes,
@@ -31,5 +33,7 @@ module.exports = {
     observacionRoutes,
     sexoRoutes,
     archivoRoutes,
-    estadoRoutes
+    estadoRoutes,
+    categoriaRoutes,
+    precioRoutes
 }

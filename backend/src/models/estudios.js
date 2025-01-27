@@ -20,6 +20,9 @@ Estudio.associate = (models) => {
   Estudio.hasMany(models.Protocolo, {
     foreignKey: 'id_estudio'
   });
+  Estudio.hasMany(models.Precio, {
+    foreignKey: 'id_estudio'
+  });
 }
 
 

@@ -14,6 +14,8 @@ const TipoCelula = require( "./tipoCelulas");
 const Raza = require( "./raza");
 const Especie = require( "./especie");
 const Observacion = require( "./observaciones");
+const Categorias_Especies = require( "./categorias_especies");
+const Precio = require( "./precio");
 
 const models = {
     ArchivoPdf,
@@ -31,7 +33,9 @@ const models = {
     TipoCelula,
     Raza,
     Especie,
-    Observacion
+    Observacion,
+    Categorias_Especies,
+    Precio
 }
 
 Object.values(models).forEach(model => {

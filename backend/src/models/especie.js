@@ -11,6 +11,10 @@ const Especie = sequelize.define('Especie', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  id_categoria: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  }
 }, {
   tableName: 'especies',
   timestamps: false,
@@ -19,6 +23,9 @@ const Especie = sequelize.define('Especie', {
 Especie.associate = (models) => {
   Especie.hasMany(models.Paciente, {
     foreignKey: 'id_especie'
+  });
+  Especie.belongsTo(models.Categorias_Especies, {
+    foreignKey: 'id_categoria'
   });
 }
 
