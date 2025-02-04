@@ -1,4 +1,4 @@
-const { Protocolo, Paciente, Veterinaria, Profesional, Estudio, Especie, Raza, Sexo, ArchivoPdf, Estado, Precio } = require('../models');
+const { Protocolo, Paciente, Veterinaria, Profesional, Estudio, Especie, Raza, Sexo, ArchivoPdf, Estado, Precio, Hemograma, Bioquimica_Sanguinea, Coagulograma, FormulaLeucocitaria } = require('../models');
 const moment = require('moment');
 const sequelize = require('sequelize');
 
@@ -21,7 +21,12 @@ const getAllProtocolos = async () => {
         ]
       },   
       Estado,  
-      ArchivoPdf
+      ArchivoPdf,
+      Hemograma,
+      Bioquimica_Sanguinea,
+      Coagulograma,
+      FormulaLeucocitaria
+
     ],
     order: [['fecha', 'DESC']]
   });
@@ -46,7 +51,11 @@ const getProtocoloById = async (id_protocolo) => {
         ]
       },   
       Estado,    
-      ArchivoPdf
+      ArchivoPdf,
+      Hemograma,
+      Bioquimica_Sanguinea,
+      Coagulograma,
+      FormulaLeucocitaria
     ],
   });
 
@@ -107,7 +116,11 @@ const searchProtocolos = async (filters) => {
         ]
       },  
       Estado,    
-      ArchivoPdf
+      ArchivoPdf,
+      Hemograma,
+      Bioquimica_Sanguinea,
+      Coagulograma,
+      FormulaLeucocitaria
     ],
     order: [['fecha', 'DESC']]
   });

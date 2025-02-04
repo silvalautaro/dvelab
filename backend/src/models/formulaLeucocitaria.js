@@ -17,11 +17,11 @@ const FormulaLeucocitaria = sequelize.define('FormulaLeucocitaria', {
     },
     relativa: {
         type: DataTypes.DECIMAL(5,2),
-        allowNull: false,
+        allowNull: true,
     },
     absoluta: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
     },
     }, {
     tableName: 'FormulaLeucocitaria',

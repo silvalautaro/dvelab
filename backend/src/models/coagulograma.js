@@ -13,11 +13,11 @@ const Coagulograma = sequelize.define('Coagulograma', {
     },
     tiempo_protrombina: {
         type: DataTypes.DECIMAL(5, 2),
-        allowNull: false,
+        allowNull: true,
     },
     tiempo_tromboplastina: {
         type: DataTypes.DECIMAL(5, 2),
-        allowNull: false,
+        allowNull: true,
     },
 }, {
     tableName: 'Coagulogramas',
