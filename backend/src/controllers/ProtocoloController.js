@@ -4,7 +4,10 @@ const path = require('path');
 const {
   getAllProtocolos,
   getProtocoloById,
-  createProtocolo
+  createProtocolo,
+  updateProtocolo,
+  deleteProtocolo,
+  searchProtocolos
 } = require('../services/ProtocoloService');
 
 const {
@@ -17,7 +20,7 @@ const {
 const getProtocolos = async (req, res) => {
   try {
     const protocolos = await getAllProtocolos();
-    res.json({ result: protocolos, status: 200, ok: true });
+    res.json({ registros: protocolos.length, result: protocolos, status: 200, ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message, status: 500, ok: false });
   }
@@ -86,9 +89,53 @@ const addProtocolo = async (req, res) => {
   }
 };
 
+const updateProtocoloId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const body = req.body;
+    const protocolo = await getProtocoloById(id);
+    if (protocolo) {
+      await updateProtocolo(id, body);
+      res.json({ result: 'Protocolo actualizado', status: 200, ok: true });
+    } else {
+      res.status(404).json({ error: 'Protocolo no encontrado', status: 404, ok: false });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message, status: 500, ok: false });
+  }
+};
+
+const deleteProtocoloId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const protocolo = await getProtocoloById(id);
+    if (protocolo) {
+      await deleteProtocolo(id);
+      res.json({ result: 'Protocolo eliminado', status: 200, ok: true });
+    } else {
+      res.status(404).json({ error: 'Protocolo no encontrado', status: 404, ok: false });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message, status: 500, ok: false });
+  }
+};
+
+const searchProtocolosByFilters = async (req, res) => {
+  try {
+    const filters = req.query;
+    const protocolos = await searchProtocolos(filters);
+    res.json({ registros: protocolos.length, result: protocolos, status: 200, ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message, status: 500, ok: false });
+  }
+}
+
 
 module.exports = {
   getProtocolos,
   getProtocoloId,
   addProtocolo,
+  updateProtocoloId,
+  deleteProtocoloId,
+  searchProtocolosByFilters
 };

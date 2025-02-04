@@ -12,7 +12,7 @@ const Raza = sequelize.define('Raza', {
     allowNull: false,
   },
 }, {
-  tableName: 'razas',
+  tableName: 'Razas',
   timestamps: false,
 });
 

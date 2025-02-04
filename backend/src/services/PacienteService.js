@@ -18,8 +18,19 @@ const createPaciente = async (data) => {
   return await Paciente.create(data);
 };
 
+const updatePaciente = async (id, data) => {
+  return await Paciente.update(data, { where: { id_paciente: id } });
+};
+
+const deletePaciente = async (id) => {
+  return await Paciente.destroy({ where: { id_paciente: id } });
+};
+
+
 module.exports = {
   getAllPacientes,
   getPacienteById,
-  createPaciente
+  createPaciente,
+  updatePaciente,
+  deletePaciente
 };

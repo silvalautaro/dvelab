@@ -1,9 +1,9 @@
-const { getAllEstudios, createEstudio } = require('../services/EstudioService');
+const { getAllEstudios, createEstudio, getEstudio, updateEstudio, deleteEstudio, } = require('../services/EstudioService');
 
 const getEstudios = async (req, res) => {
   try {
     const Estudios = await getAllEstudios();
-    res.json({ result: Estudios, status: 200, ok: true});
+    res.json({ registro: Estudios.length, result: Estudios, status: 200, ok: true});
   } catch (err) {
     res.status(500).json({ error: err.message, status: 500, ok: false });
   }
@@ -18,7 +18,40 @@ const addEstudio = async (req, res) => {
   }
 };
 
+const getEstudioById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const Estudio = await getEstudio(id);
+    res.json({ result: Estudio, status: 200, ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message, status: 500, ok: false });
+  }
+};
+
+const updateEstudioById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await updateEstudio(id, req.body);
+    res.json({ message: 'Estudio actualizado', status: 200, ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message, status: 500, ok: false });
+  }
+};
+
+const deleteEstudioById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await deleteEstudio(id);
+    res.json({ message: 'Estudio eliminado', status: 200, ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message, status: 500, ok: false });
+  }
+};
+
 module.exports = {
   getEstudios,
   addEstudio,
+  getEstudioById,
+  updateEstudioById,
+  deleteEstudioById,
 };

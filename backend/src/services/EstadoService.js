@@ -1,7 +1,5 @@
 const Estado = require('../models/estado');
-const Protocolos = require('../models/protocolo');
 
-// Obtener todos los estados
 const getEstados = async () => {
     try {
       const estados = await Estado.findAll();
@@ -12,23 +10,38 @@ const getEstados = async () => {
     }
 };
   
-  // Actualizar el estado de un protocolo
-const actualizarEstadoProtocolo = async (idProtocolo, idEstado) => {
+const createEstado = async (data) => {
     try {
-      const protocolo = await Protocolos.findByPk(idProtocolo);
-      if (!protocolo) {
-        throw new Error('Protocolo no encontrado');
-      }
-      protocolo.id_estado = idEstado;
-      await protocolo.save();
-      return protocolo;
+      const nuevoEstado = await Estado.create(data);
+      return nuevoEstado;
     } catch (error) {
-      console.error('Error al actualizar estado del protocolo:', error);
-      throw new Error('Error al actualizar estado', error);
+      console.error('Error al crear estado:', error);
+      throw new Error('Error al crear estado');
     }
 };
 
+const updateEstado = async (id_estado, data) => {
+    try {
+      return await Estado.update(data, { where: { id_estado } });
+    } catch (error) {
+      console.error('Error al actualizar estado:', error);
+      throw new Error('Error al actualizar estado');
+    }
+};
+
+const deleteEstado = async (id_estado) => {
+    try {
+      return await Estado.destroy({ where: { id_estado } });
+    } catch (error) {
+      console.error('Error al eliminar estado:', error);
+      throw new Error('Error al eliminar estado');
+    }
+};
+
+
 module.exports = {
     getEstados,
-    actualizarEstadoProtocolo
+    createEstado,
+    updateEstado,
+    deleteEstado,
 };

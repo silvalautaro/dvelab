@@ -19,7 +19,7 @@ const Sidebar = () => {
         <Box sx={{ width: '250px', backgroundColor: '#0a0e0f', height: '100vh', padding: '16px' }}>
             <List>
                 {/* Botón Ingresos */}
-                <ListItem button onClick={handleToggleIngresos}>
+                <ListItem component="div" onClick={handleToggleIngresos} sx={{ cursor: 'pointer' }}>
                     <ListItemIcon sx={{ color: 'white' }}>
                         <BiotechIcon />
                     </ListItemIcon>
@@ -32,7 +32,7 @@ const Sidebar = () => {
                 </ListItem>
                 <Collapse in={openIngresos} timeout="auto" unmountOnExit>
                     <List component="div" disablePadding>
-                        <ListItem button component={Link} to="/dashboard/ingresos/formulario" sx={{ pl: 4 }}>
+                        <ListItem component={Link} to="/dashboard/ingresos/formulario" sx={{ pl: 4 }}>
                             <ListItemIcon sx={{ color: 'white' }}>
                                 <AssignmentIcon />
                             </ListItemIcon>
@@ -42,7 +42,7 @@ const Sidebar = () => {
                 </Collapse>
 
                 {/* Botón Informes */}
-                <ListItem button onClick={handleToggleInformes}>
+                <ListItem component="div" onClick={handleToggleInformes} sx={{ cursor: 'pointer' }}>
                     <ListItemIcon sx={{ color: 'white' }}>
                         <MenuBookIcon />
                     </ListItemIcon>
@@ -55,7 +55,7 @@ const Sidebar = () => {
                 </ListItem>
                 <Collapse in={openInformes} timeout="auto" unmountOnExit>
                     <List component="div" disablePadding>
-                        <ListItem button component={Link} to="/dashboard/informes/tabla" sx={{ pl: 4 }}>
+                        <ListItem component={Link} to="/dashboard/informes/tabla" sx={{ pl: 4 }}>
                             <ListItemIcon sx={{ color: 'white' }}>
                                 <DescriptionIcon />
                             </ListItemIcon>

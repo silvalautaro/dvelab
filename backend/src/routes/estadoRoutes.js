@@ -1,10 +1,12 @@
 const express = require('express');
 const path = require('path');
-const { getAllEstados, updateEstado } = require('../controllers/EstadoController');
+const { getAllEstados, addEstado, updateEstadoById, deleteEstadoById } = require('../controllers/EstadoController');
 
 const router = express.Router();
 
 router.get('/', getAllEstados);
-router.put('/', updateEstado);
+router.post('/', addEstado);
+router.put('/:id', updateEstadoById);
+router.delete('/:id', deleteEstadoById);
 
 module.exports = router;

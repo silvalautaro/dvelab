@@ -1,9 +1,9 @@
-const { getAllSexos, createSexo } = require('../services/SexoService');
+const { getAllSexos, createSexo, updateSexo, deleteSexo } = require('../services/SexoService');
 
 const getSexos = async (req, res) => {
   try {
     const Sexos = await getAllSexos();
-    res.json({ result: Sexos, status: 200, ok: true});
+    res.json({ registro: Sexos.length,result: Sexos, status: 200, ok: true});
   } catch (err) {
     res.status(500).json({ error: err.message, status: 500, ok: false });
   }
@@ -18,7 +18,29 @@ const addSexo = async (req, res) => {
   }
 };
 
+const updateSexoById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const Sexo = await updateSexo(id, req.body);
+    res.json({ result: Sexo, status: 200, ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message, status: 500, ok: false });
+  }
+};
+
+const deleteSexoById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await deleteSexo(id);
+    res.json({ result: 'Sexo eliminado', status: 200, ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message, status: 500, ok: false });
+  }
+};
+
 module.exports = {
   getSexos,
   addSexo,
+  updateSexoById,
+  deleteSexoById
 };

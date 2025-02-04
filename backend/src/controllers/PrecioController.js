@@ -9,7 +9,7 @@ const {
 const getPrecios = async (req, res) => {
     try {
         const precios = await getAllPrecios();
-        res.json({ result: precios, status: 200, ok: true });
+        res.json({ registro: precios.length, result: precios, status: 200, ok: true });
     } catch (err) {
         res.status(500).json({ error: err.message, status: 500, ok: false });
     }

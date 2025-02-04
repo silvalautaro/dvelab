@@ -16,6 +16,7 @@ const Especie = require( "./especie");
 const Observacion = require( "./observaciones");
 const Categorias_Especies = require( "./categorias_especies");
 const Precio = require( "./precio");
+const Usuario = require( "./usuario");
 
 const models = {
     ArchivoPdf,
@@ -35,7 +36,8 @@ const models = {
     Especie,
     Observacion,
     Categorias_Especies,
-    Precio
+    Precio,
+    Usuario
 }
 
 Object.values(models).forEach(model => {

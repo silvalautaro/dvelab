@@ -12,9 +12,9 @@ const getAllPrecios = async () => {
     }
 }
 
-const getPrecioById = async (id) => {
+const getPrecioById = async (id_precio) => {
     try {
-        const precio = await Precio.findByPk(id,{
+        const precio = await Precio.findByPk(id_precio,{
             include:[ Estudio, Categorias_Especies ]
         });
         return precio;

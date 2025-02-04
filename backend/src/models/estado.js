@@ -12,7 +12,7 @@ const Estado = sequelize.define('Estado', {
     allowNull: false,
   },
 }, {
-  tableName: 'estados',
+  tableName: 'Estados',
   timestamps: false,
 });
 

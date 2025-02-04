@@ -24,7 +24,7 @@ const ArchivoPdf = sequelize.define('ArchivoPdf', {
     defaultValue: DataTypes.NOW
   },
 }, {
-  tableName: 'archivo_pdf', 
+  tableName: 'Archivo_pdf', 
   timestamps: false
 });
   

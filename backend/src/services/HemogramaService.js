@@ -1,25 +1,34 @@
 const { Hemograma, Protocolo } = require('../models');
+let hemograma;
 
-//obtener el hemograma de un protocolo
 const getAllHemogramas = async (id) => {
-  try {
-    return await Hemograma.findAll();
-  } catch (error) {
-      console.error('Error al obtener hemogramas:', error);
-      throw new Error('Error al obtener hemogramas');
-  }
+  return await Hemograma.findAll();
 };
 
 const createHemograma = async (data) => {
-  try {
-    return await Hemograma.create(data);
-  } catch (error) {
-      console.error('Error al crear hemograma:', error);
-      throw new Error('Error al crear hemograma');
-  }
+  return await Hemograma.create(data);
 };
+
+const getHemograma = async (id_protocolo) => {
+  return await Hemograma.findOne({
+    where: { id_protocolo },
+  });
+};
+
+const updateHemograma = async (id_protocolo, data) => {
+  hemograma = await getHemograma(id_protocolo);
+  return await hemograma.update(data);
+}
+
+const deleteHemograma = async (id_protocolo) => {
+  hemograma = await getHemograma(id_protocolo);
+  return await hemograma.destroy();
+}
 
 module.exports = {
   getAllHemogramas,
-  createHemograma
+  createHemograma,
+  getHemograma,
+  updateHemograma,
+  deleteHemograma
 };

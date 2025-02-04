@@ -10,7 +10,7 @@ const {
 const getAllArchivos = async (req, res) => {
     try {
         const archivos = await getAllArchivosPdf();
-        res.json({ result: archivos, status: 200, ok: true });
+        res.json({ registro: archivos.length, result: archivos, status: 200, ok: true });
     } catch (err) {
         res.status(500).json({ error: err.message, status: 500, ok: false });
     }

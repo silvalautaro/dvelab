@@ -12,8 +12,27 @@ const createVeterinaria = async (data) => {
   return await Veterinaria.create(data);
 };
 
+const updateVeterinaria = async (id, data) => {
+  return await Veterinaria.update(data, {
+    where: {
+      id_veterinaria : id
+    }
+  });
+};
+
+const deleteVeterinaria = async (id) => {
+  return await Veterinaria.destroy({
+    where: {
+      id_veterinaria: id
+    }
+  });
+}
+
+
 module.exports = {
   getAllVeterinarias,
   getVeterinariaById,
-  createVeterinaria
+  createVeterinaria,
+  updateVeterinaria,
+  deleteVeterinaria
 };

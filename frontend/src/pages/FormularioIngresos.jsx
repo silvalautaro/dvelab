@@ -4,6 +4,7 @@ import { Box, TextField, Button, Autocomplete } from '@mui/material';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 // Esquema de validación usando Yup
 const validationSchema = yup.object().shape({
@@ -36,10 +37,12 @@ const validationSchema = yup.object().shape({
 const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
 const FormularioIngresos = () => {
+    const navigate = useNavigate();
     const {
         handleSubmit,
         control,
         formState: { errors },
+        reset
     } = useForm({
         resolver: yupResolver(validationSchema),
     });
@@ -103,6 +106,8 @@ const FormularioIngresos = () => {
             const response = await axios.post(`${backendUrl}/protocolos`, datosParaEnviar);
             alert('Datos enviados correctamente');
             console.log('Respuesta del servidor:', response.data);
+            reset();
+            navigate('/dashboard/informes/tabla')
             
         } catch (error) {
             console.error('Error al enviar los datos:', error);
@@ -213,8 +218,8 @@ const FormularioIngresos = () => {
                             <TextField
                                 {...params}
                                 label="Veterinaria"
-                                error={!!errors.professional}
-                                helperText={errors.professional?.message}
+                                error={!!errors.veterinary}
+                                helperText={errors.veterinary?.message}
                             />
                         )}
                     />

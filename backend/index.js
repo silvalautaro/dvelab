@@ -23,7 +23,8 @@ const {
   archivoRoutes,
   estadoRoutes,
   categoriaRoutes,
-  precioRoutes
+  precioRoutes,
+  usuarioRoutes
 } = require('./src/routes');
 
 
@@ -62,6 +63,7 @@ app.use('/api/archivos', archivoRoutes);
 app.use('/api/estados', estadoRoutes);
 app.use('/api/categorias', categoriaRoutes);
 app.use('/api/precios', precioRoutes);
+app.use('/api/usuarios', usuarioRoutes);
 
 
 const PORT =  process.env.PORT || 3001;

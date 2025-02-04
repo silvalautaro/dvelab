@@ -1,13 +1,14 @@
 const express = require('express');
 const path = require('path');
-const { getProtocolos, addProtocolo, getProtocoloId } = require('../controllers/ProtocoloController');
-const multer = require('multer');
-const upload = multer();
+const { getProtocolos, addProtocolo, getProtocoloId, updateProtocoloId, deleteProtocoloId, searchProtocolosByFilters } = require('../controllers/ProtocoloController');
 
 const router = express.Router();
 
 router.get('/', getProtocolos);
-router.post('/', upload.none(), addProtocolo);
 router.get('/:id', getProtocoloId);
+router.post('/', addProtocolo);
+router.put('/:id', updateProtocoloId);
+router.delete('/:id', deleteProtocoloId);
+router.get('/go/search?', searchProtocolosByFilters);
 
 module.exports = router;

@@ -83,8 +83,21 @@ const TablaRegistros = () => {
   const [formulaLeucocitariaData, setFormulaLeucocitariaData] = useState({});
   const [bioquimicaSanguineaData, setBioquimicaSanguineaData] = useState({});
   const [coagulogramaData, setCoagulogramaData] = useState({});
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
+  const [estado, setEstado] = useState('');
+  const [numeroProtocolo, setNumeroProtocolo] = useState('');
+  const [estados, setEstados] = useState([]);
 
   useEffect(() => {
+    const fetchEstados = async () => {
+      try {
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/estados`);
+        setEstados(response.data.result);
+      } catch (error) {
+        console.error('Error fetching estados:', error);
+      }
+    };
     const fetchData = async () => {
       try {
         const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos`);
@@ -95,7 +108,49 @@ const TablaRegistros = () => {
     };
 
     fetchData();
+    fetchEstados();
   }, []);
+
+  const handleEstadoChange = (e) => {setEstado(e.target.value); console.log(e.target.value);}
+  const handleNumeroProtocoloChange = (e) => {setNumeroProtocolo(e.target.value); console.log(e.target.value)};
+
+  const handleFechaInicioChange = (event) => {
+    setFechaInicio(event.target.value);
+  };
+
+  const handleFechaFinChange = (event) => {
+    setFechaFin(event.target.value);
+  };
+
+  const handleFiltroClick = async () => {
+    try {
+      // Enviar los datos al backend
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos/go/search`, {
+        params: {
+          fecha_inicio: fechaInicio,
+          fecha_fin: fechaFin,
+          id_estado: estado,
+          id_protocolo: numeroProtocolo
+        }
+      });
+      setData(response.data.result);
+      console.log(response.data);  // Puedes manejar la respuesta como desees
+    } catch (error) {
+      console.error('Error al obtener los datos:', error);
+    }
+  };
+  const handleLimpiarFiltros = async() => {
+    setFechaInicio('');
+    setFechaFin('');
+    setEstado('');
+    setNumeroProtocolo('');
+    try {
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos`);
+      setData(response.data.result);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
 
   const handlePageChange = (_, newPage) => {
     setPage(newPage);
@@ -105,7 +160,9 @@ const TablaRegistros = () => {
     setRowsPerPage(event.target.value);
   };
 
-  const handleClick = (event) => {
+  const handleClick = (event, id_protocolo) => {
+    console.log(id_protocolo);
+    setSelectedProtocoloId(id_protocolo);
     setAnchorEl(event.currentTarget);
     setOpenMenu(true);
   };
@@ -114,15 +171,16 @@ const TablaRegistros = () => {
     setAnchorEl(null);
     setOpenMenu(false);
   };
-
+  
   const handleOpenDialog = (id_protocolo) => {
-    setSelectedProtocoloId(id_protocolo);
+    //setSelectedProtocoloId(id_protocolo);
     setOpenDialog(true);
     handleCloseMenu();
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
+    setSelectedProtocoloId(null);
   };
 
   const handleNext = () => {
@@ -212,14 +270,58 @@ const TablaRegistros = () => {
 
       {/* Filtros */}
       <Box display="flex" justifyContent="space-between" mb={2}>
-        <Box display="flex" gap={2}>
-          <TextField label="Desde" type="date" InputLabelProps={{ shrink: true }} />
-          <TextField label="Hasta" type="date" InputLabelProps={{ shrink: true }} />
-          <Button variant="contained" color="primary">
-            Filtros
-          </Button>
-        </Box>
+      <Box display="flex" gap={2}>
+        <TextField
+          label="Desde"
+          type="date"
+          InputLabelProps={{ shrink: true }}
+          value={fechaInicio}
+          onChange={handleFechaInicioChange}
+        />
+        <TextField
+          label="Hasta"
+          type="date"
+          InputLabelProps={{ shrink: true }}
+          value={fechaFin}
+          onChange={handleFechaFinChange}
+        />
+        {/* Campo de Estado */}
+        <TextField
+          select
+          label="Estado"
+          value={estado}
+          onChange={handleEstadoChange}
+          SelectProps={{
+            native: true,
+          }}
+        >
+          <option value="">
+          </option>
+          {estados.map((estado) => (
+            <option key={estado.id_estado} value={estado.id_estado}>
+              {estado.estado}
+            </option>
+          ))}
+        </TextField>
+
+        {/* Campo de N° de Protocolo */}
+        <TextField
+          label="N° de Protocolo"
+          value={numeroProtocolo}
+          onChange={handleNumeroProtocoloChange}
+        />
+        <Button variant="contained" color="primary" onClick={handleFiltroClick}>
+          Filtrar
+        </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleLimpiarFiltros}
+        >
+          Limpiar filtros
+      </Button>
       </Box>
+    </Box>
 
       {/* Tabla */}
       <TableContainer component={Paper}>
@@ -230,79 +332,102 @@ const TablaRegistros = () => {
               <TableCell>Número de Protocolo</TableCell>
               <TableCell>Emisión</TableCell>
               <TableCell>Análisis Solicitado</TableCell>
+              <TableCell>Importe</TableCell>
               <TableCell></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {data
               .slice((page - 1) * rowsPerPage, page * rowsPerPage)
-              .map((row, index) => (
-                <TableRow key={index}>
-                  <TableCell>{estadosMap[row.id_estado] || 'Desconocido'}</TableCell>
-                  <TableCell>{row.id_protocolo}</TableCell>
-                  <TableCell>{row.fecha}</TableCell>
-                  <TableCell>{estudiosMap[row.id_estudio] || 'Desconocido'}</TableCell>
-                  <TableCell>
-                    <div>
-                      <IconButton onClick={handleClick}>
-                        <MoreVertIcon />
-                      </IconButton>
-                      <Menu
-                        anchorEl={anchorEl}
-                        open={openMenu}
-                        onClose={handleCloseMenu}
-                        PaperProps={{
-                          style: { width: 200 },
-                        }}
-                      >
-                        <MenuItem onClick={handleCloseMenu}>Ver</MenuItem>
-                        <MenuItem onClick={() => handleOpenDialog(row.id_protocolo)}>Editar</MenuItem>
-                        <MenuItem onClick={handleCloseMenu}>Descargar</MenuItem>
-                        <MenuItem onClick={handleCloseMenu}>Eliminar</MenuItem>
-                      </Menu>
+              .map((row, index) => {
+                const precioEstudio = row.Estudio.Precios[0].precio;
+                const formatCurrency = (amount) => {
+                  return new Intl.NumberFormat('es-ES', {
+                    style: 'currency',
+                    currency: 'ARS',
+                  }).format(amount);
+                };
+                
+                let importeColor = '';
+                if (row.importe === precioEstudio) {
+                  importeColor = 'green';
+                } else if (row.importe > 0 && row.importe < precioEstudio) {
+                  importeColor = 'yellow'; 
+                } else if (row.importe === 0) {
+                  importeColor = 'red'; 
+                }
 
-                      {/* Diálogo con formulario */}
-                      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-                        <DialogTitle>Editar Registro</DialogTitle>
-                        <DialogContent>
-                          <Stepper activeStep={activeStep}>
-                            {steps.map((label, index) => (
-                              <Step key={label}>
-                                <StepLabel>{label}</StepLabel>
-                              </Step>
-                            ))}
-                          </Stepper>
-                          {renderFormContent(activeStep)}
-                        </DialogContent>
-                        <DialogActions>
-                          <Button onClick={handleCloseDialog} color="primary">
-                            Cancelar
-                          </Button>
-                          <Button
-                            disabled={activeStep === 0}
-                            onClick={handleBack}
-                            color="primary"
-                          >
-                            Atrás
-                          </Button>
-                          <Button
-                            disabled={activeStep === steps.length - 1}
-                            onClick={handleNext}
-                            color="primary"
-                          >
-                            Siguiente
-                          </Button>
-                          {activeStep === steps.length - 1 && (
-                            <Button onClick={handleSave} color="primary">
-                              Guardar
+                return (
+                  <TableRow key={index}>
+                    <TableCell>{estadosMap[row.id_estado] || 'Desconocido'}</TableCell>
+                    <TableCell>{row.id_protocolo}</TableCell>
+                    <TableCell>{row.fecha}</TableCell>
+                    <TableCell>{estudiosMap[row.id_estudio] || 'Desconocido'}</TableCell>
+                    <TableCell style={{ backgroundColor: importeColor, textAlign: 'center', fontWeight: 'bold' }}>
+                        {formatCurrency(row.importe)}
+                    </TableCell>
+                    <TableCell>
+                        <IconButton onClick={(event) => handleClick(event, row.id_protocolo)}>
+                          <MoreVertIcon />
+                        </IconButton>
+                        <Menu
+                          anchorEl={anchorEl}
+                          open={openMenu}
+                          slotProps={{
+                            paper: {
+                              style: { width: 200 },
+                            },
+                          }}
+                          onClose={handleCloseMenu}
+                        >
+                          <MenuItem onClick={handleCloseMenu}>Ver</MenuItem>
+                          <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Editar</MenuItem>
+                          <MenuItem onClick={handleCloseMenu}>Descargar</MenuItem>
+                          <MenuItem onClick={handleCloseMenu}>Eliminar</MenuItem>
+                        </Menu>
+
+                        {/* Diálogo con formulario */}
+                        <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+                          <DialogTitle>Editar Protocolo N° ({selectedProtocoloId})</DialogTitle>
+                          <DialogContent>
+                            <Stepper activeStep={activeStep}>
+                              {steps.map((label) => (
+                                <Step key={label}>
+                                  <StepLabel>{label}</StepLabel>
+                                </Step>
+                              ))}
+                            </Stepper>
+                            {renderFormContent(activeStep)}
+                          </DialogContent>
+                          <DialogActions>
+                            <Button onClick={handleCloseDialog} color="primary">
+                              Cancelar
                             </Button>
-                          )}
-                        </DialogActions>
-                      </Dialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                            <Button
+                              disabled={activeStep === 0}
+                              onClick={handleBack}
+                              color="primary"
+                            >
+                              Atrás
+                            </Button>
+                            <Button
+                              disabled={activeStep === steps.length - 1}
+                              onClick={handleNext}
+                              color="primary"
+                            >
+                              Siguiente
+                            </Button>
+                            {activeStep === steps.length - 1 && (
+                              <Button onClick={handleSave} color="primary">
+                                Guardar
+                              </Button>
+                            )}
+                          </DialogActions>
+                        </Dialog>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
           </TableBody>
         </Table>
       </TableContainer>

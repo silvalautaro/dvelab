@@ -1,9 +1,9 @@
-const { getAllRazas, createRaza } = require('../services/RazaService');
+const { getAllRazas, createRaza, updateRaza, deleteRaza } = require('../services/RazaService');
 
 const getRazas = async (req, res) => {
   try {
     const Razas = await getAllRazas();
-    res.json({ result: Razas, status: 200, ok: true});
+    res.json({ registro: Razas.length, result: Razas, status: 200, ok: true});
   } catch (err) {
     res.status(500).json({ error: err.message, status: 500, ok: false });
   }
@@ -18,7 +18,29 @@ const addRaza = async (req, res) => {
   }
 };
 
+const updateRazaById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedRaza = await updateRaza(id, req.body);
+    res.json({ result: updatedRaza, status: 200, ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message, status: 500, ok: false });
+  }
+};
+
+const deleteRazaById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await deleteRaza(id);
+    res.status(204).end();
+  } catch (err) {
+    res.status(500).json({ error: err.message, status: 500, ok: false });
+  }
+}
+
 module.exports = {
   getRazas,
   addRaza,
+  updateRazaById,
+  deleteRazaById,
 };

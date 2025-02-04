@@ -16,6 +16,7 @@ const archivoRoutes = require('./archivoRoutes');
 const estadoRoutes = require('./estadoRoutes');
 const categoriaRoutes = require('./categoriaRoutes');
 const precioRoutes = require('./precioRoutes');
+const usuarioRoutes = require('./usuarioRoutes');
 
 module.exports = {
     especieRoutes,
@@ -35,5 +36,6 @@ module.exports = {
     archivoRoutes,
     estadoRoutes,
     categoriaRoutes,
-    precioRoutes
+    precioRoutes,
+    usuarioRoutes
 }

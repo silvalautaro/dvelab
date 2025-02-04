@@ -16,7 +16,7 @@ const Especie = sequelize.define('Especie', {
     allowNull: false,
   }
 }, {
-  tableName: 'especies',
+  tableName: 'Especies',
   timestamps: false,
 });
 

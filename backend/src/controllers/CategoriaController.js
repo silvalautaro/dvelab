@@ -12,7 +12,7 @@ const { getAllCategorias,
 const getCategorias = async (req, res) => {
     try {
         const categorias = await getAllCategorias();
-        res.json({ result: categorias, status: 200, ok: true });
+        res.json({ registro: categorias.length, result: categorias, status: 200, ok: true });
     } catch (err) {
         res.status(500).json({ error: err.message, status: 500, ok: false });
     }
