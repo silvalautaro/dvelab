@@ -24,6 +24,9 @@ import {
 } from "@mui/material";
 import { Box } from "@mui/system";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import logoUrl from '../assets/logo.png';
 import axios from 'axios';
 
 const steps = ['HEMOGRAMA', 'Formula Leucocitaria', 'BIOQUIMICA SANGUINEA', 'Coagulograma'];
@@ -134,6 +137,12 @@ const TablaRegistros = () => {
   const [numeroProtocolo, setNumeroProtocolo] = useState('');
   const [estados, setEstados] = useState([]);
   const [tipoCelulas, setTipoCelulas] = useState([]);
+  const [openPaymentDialog, setOpenPaymentDialog] = useState(false);
+  const [paymentData, setPaymentData] = useState({
+    importe: '',
+    medioPago: '',
+    observaciones: ''
+  });
 
   useEffect(() => {
     const fetchEstados = async () => {
@@ -287,8 +296,8 @@ const TablaRegistros = () => {
         trigliceridos: convertToNumberOrNull(bioquimicaSanguineaData['trigliceridos-(tag)']),
         colesterol_total: convertToNumberOrNull(bioquimicaSanguineaData['colesterol-total-(col)']),
         creatinina_p_kinasa: convertToNumberOrNull(bioquimicaSanguineaData['creatinin-p-kinasa-(cpk)']),
-        hdl_col: convertToNumberOrNull(bioquimicaSanguineaData['hdl--col']),
-        ldl_col: convertToNumberOrNull(bioquimicaSanguineaData['ldl--col']),
+        hdl_col: convertToNumberOrNull(bioquimicaSanguineaData['hdl-col']),
+        ldl_col: convertToNumberOrNull(bioquimicaSanguineaData['ldl-col']),
         calcio_total: convertToNumberOrNull(bioquimicaSanguineaData['calcio-total-(ca)']),
         fosforo: convertToNumberOrNull(bioquimicaSanguineaData['fosforo-(p)']),
         sodio: convertToNumberOrNull(bioquimicaSanguineaData['sodio-(na)']),
@@ -376,6 +385,213 @@ const TablaRegistros = () => {
     setCoagulogramaData({ ...coagulogramaData, [id]: e.target.value });
   };
 
+  const handleDownload = async (id_protocolo) => {
+    try {
+      // Obtener datos desde el backend
+      const protocoloResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos/${id_protocolo}`);
+      const hemogramaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/hemogramas/${id_protocolo}`);
+      const formulaLeucocitariaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/formula-leucocitaria/${id_protocolo}`);
+      const coagulogramaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/coagulogramas/${id_protocolo}`);
+      const bioquimicaSanguineaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/bioquimica-sanguinea/${id_protocolo}`);
+      const profesionalResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/profesionales/${protocoloResponse.data.result.id_profesional}`);
+      const pacienteResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/pacientes/${protocoloResponse.data.result.id_paciente}`);
+  
+      const protocolo = protocoloResponse.data.result;
+      const hemograma = hemogramaResponse.data.result;
+      const formulaLeucocitaria = Array.isArray(formulaLeucocitariaResponse.data.result) ? formulaLeucocitariaResponse.data.result : [formulaLeucocitariaResponse.data.result];
+      const coagulograma = coagulogramaResponse.data.result;
+      const bioquimicaSanguinea = bioquimicaSanguineaResponse.data.result;
+      const profesional = profesionalResponse.data.result;
+      const paciente = pacienteResponse.data.result;
+  
+      const doc = new jsPDF();
+  
+      // Logo
+      const logoHeight = 25; // Alto deseado
+      const logoWidth = logoHeight * (1761 / 642); // Ancho calculado para mantener la proporción
+  
+      doc.addImage(logoUrl, 'PNG', 14, 10, logoWidth, logoHeight);
+  
+      // Encabezado con datos del protocolo
+      doc.setFontSize(12);
+      let yPosition = 50; // Posición inicial debajo del logo
+  
+      doc.text(`Número de Protocolo: ${protocolo.id_protocolo || ''}`, 14, yPosition);
+      yPosition += 10;
+      doc.text(`Fecha: ${protocolo.fecha || ''}`, 14, yPosition);
+      yPosition += 10;
+      doc.text(`Profesional Veterinaria: ${profesional.nombre || ''}`, 14, yPosition);
+      yPosition += 10;
+      doc.text(`Tutor: ${paciente.tutor || ''}`, 14, yPosition);
+      yPosition += 10;
+      doc.text(`Paciente: ${paciente.nombre || ''}`, 14, yPosition);
+      yPosition += 10;
+      doc.text(`Especie: ${paciente.especie || ''}`, 14, yPosition);
+      yPosition += 10;
+      doc.text(`Raza: ${paciente.raza || ''}`, 14, yPosition);
+      yPosition += 10;
+      doc.text(`Sexo: ${paciente.sexo || ''}`, 14, yPosition);
+      yPosition += 10;
+      doc.text(`Edad: ${paciente.edad || ''}`, 14, yPosition);
+      yPosition += 10;
+      doc.text(`Estudio Solicitado: ${protocolo.estudio_solicitado || ''}`, 14, yPosition);
+      yPosition += 20; // Espacio adicional antes del título
+  
+      // Título
+      doc.setFontSize(16);
+      doc.text("Informe de Laboratorio", 14, yPosition);
+      yPosition += 10;
+  
+      // Tabla de Hemograma
+      doc.setFontSize(12);
+      doc.text("Hemograma", 14, yPosition);
+      const hemogramaColumnas = ["Parámetro", "Resultado", "Unidad"];
+      const hemogramaFilas = [
+        ["Recuento Glóbulos Rojos", hemograma.recuento_globulos_rojos || '', "M/ul"],
+        ["Hemoglobina", hemograma.hemoglobina || '', "g/dl"],
+        ["Hematocrito", hemograma.hematocrito || '', "%"],
+        ["VCM", hemograma.vcm || '', "fL"],
+        ["HCM", hemograma.hcm || '', "pg"],
+        ["CHCM", hemograma.chcm || '', "%"],
+        ["RDW", hemograma.rdw || '', "%"],
+        ["Índice Reticulocitario", hemograma.indice_reticulocitario || '', "-"],
+        ["Recuento Plaquetario", hemograma.recuento_plaquetario || '', "K/ul"],
+        ["Frotis", hemograma.frotis || '', ""],
+        ["Recuento Leucocitario", hemograma.recuento_leucocitario || '', "K/ul"]
+      ];
+      doc.autoTable({
+        head: [hemogramaColumnas],
+        body: hemogramaFilas,
+        startY: yPosition + 10
+      });
+  
+      // Mapeo de id_tipo_celula a nombres de tipo de célula
+      const tipoCelulasMap = tipoCelulas.reduce((map, tipo) => {
+        map[tipo.id_tipo] = tipo.tipo_celula;
+        return map;
+      }, {});
+  
+      // Tabla de Fórmula Leucocitaria
+      doc.text("Fórmula Leucocitaria", 14, doc.autoTable.previous.finalY + 10);
+      const formulaLeucocitariaColumnas = ["Tipo de Célula", "Relativa", "Absoluta"];
+      const formulaLeucocitariaFilas = formulaLeucocitaria.map((item) => [
+        tipoCelulasMap[item.id_tipo_celula] || item.id_tipo_celula,
+        item.relativa || '',
+        item.absoluta || ''
+      ]);
+      doc.autoTable({
+        head: [formulaLeucocitariaColumnas],
+        body: formulaLeucocitariaFilas,
+        startY: doc.autoTable.previous.finalY + 20
+      });
+  
+      // Tabla de Bioquímica Sanguínea
+      doc.text("Bioquímica Sanguínea", 14, doc.autoTable.previous.finalY + 10);
+      const bioquimicaColumnas = ["Parámetro", "Resultado", "Unidad"];
+      const bioquimicaFilas = [
+        ["Urea", bioquimicaSanguinea.urea || '', "mg/dl"],
+        ["Creatinina", bioquimicaSanguinea.creatinina || '', "mg/dl"],
+        ["Glucemia", bioquimicaSanguinea.glucemia || '', "mg/dl"],
+        ["GPT (ALT)", bioquimicaSanguinea.gpt || '', "U/L"],
+        ["GOT (AST)", bioquimicaSanguinea.got || '', "U/L"],
+        ["Fosfatasa Alcalina Sérica (FAS)", bioquimicaSanguinea.fosfatasa_alcalina || '', "U/L"],
+        ["g-glutamil transferasa (GGT)", bioquimicaSanguinea.g_glutamil_transferasa || '', "U/L"],
+        ["Proteínas Totales", bioquimicaSanguinea.proteinas_totales || '', "g/dl"],
+        ["Albúmina", bioquimicaSanguinea.albumina || '', "g/dl"],
+        ["Globulinas", bioquimicaSanguinea.globulinas || '', "g/dl"],
+        ["Relación Alb/Glob", bioquimicaSanguinea.relacion_alb_glob || '', ""],
+        ["Bilirrubina Total (BT)", bioquimicaSanguinea.bilirrubina_total || '', "mg/dl"],
+        ["Bilirrubina Directa (BD)", bioquimicaSanguinea.bilirrubina_directa || '', "mg/dl"],
+        ["Bilirrubina Indirecta (BI)", bioquimicaSanguinea.bilirrubina_indirecta || '', "mg/dl"],
+        ["Amilasa", bioquimicaSanguinea.amilasa || '', "U/L"],
+        ["Triglicéridos (TAG)", bioquimicaSanguinea.trigliceridos || '', "mg/dl"],
+        ["Colesterol Total (COL)", bioquimicaSanguinea.colesterol_total || '', "mg/dl"],
+        ["Creatinin-P-Kinasa (CPK)", bioquimicaSanguinea.creatinina_p_kinasa || '', "U/L"],
+        ["HDL-Col", bioquimicaSanguinea.hdl_col || '', "mg/dl"],
+        ["LDL-Col", bioquimicaSanguinea.ldl_col || '', "mg/dl"],
+        ["Calcio Total (Ca)", bioquimicaSanguinea.calcio_total || '', "mg/dl"],
+        ["Fósforo (P)", bioquimicaSanguinea.fosforo || '', "mg/dl"],
+        ["Sodio (Na)", bioquimicaSanguinea.sodio || '', "mmol/L"],
+        ["Potasio (K)", bioquimicaSanguinea.potasio || '', "mmol/L"],
+        ["Cloro (Cl)", bioquimicaSanguinea.cloro || '', "mmol/L"]
+      ];
+      doc.autoTable({
+        head: [bioquimicaColumnas],
+        body: bioquimicaFilas,
+        startY: doc.autoTable.previous.finalY + 20
+      });
+  
+      // Guardar el PDF
+      doc.save(`informe_protocolo_${id_protocolo}.pdf`);
+  
+    } catch (error) {
+      console.error("Error al generar el PDF:", error);
+    }
+  };
+
+  const handleDelete = async (id_protocolo) => {
+    const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este protocolo?");
+    if (confirmDelete) {
+      try {
+        // Eliminar el registro principal en la tabla protocolos
+        await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/protocolos/${id_protocolo}`);
+  
+        // Actualizar el estado de los datos en el frontend
+        setData((prevData) => prevData.filter((item) => item.id_protocolo !== id_protocolo));
+  
+        // Mostrar mensaje de éxito
+        alert('Protocolo eliminado correctamente');
+      } catch (error) {
+        // Manejo de errores
+        if (error.response) {
+          console.error('Error en la respuesta del servidor:', error.response.data);
+          alert(`Error al eliminar el protocolo: ${error.response.data.error || error.response.data.message}`);
+        } else if (error.request) {
+          console.error('No se recibió respuesta del servidor:', error.request);
+          alert('No se recibió respuesta del servidor. Verifica tu conexión a internet.');
+        } else {
+          console.error('Error al configurar la solicitud:', error.message);
+          alert('Error al configurar la solicitud. Inténtalo de nuevo.');
+        }
+      }
+    }
+    handleCloseMenu();
+  };
+
+  const handleOpenPaymentDialog = (id_protocolo) => {
+    setSelectedProtocoloId(id_protocolo);
+    setOpenPaymentDialog(true);
+    handleCloseMenu();
+  };
+
+  const handleClosePaymentDialog = () => {
+    setOpenPaymentDialog(false);
+    setPaymentData({
+      importe: '',
+      medioPago: '',
+      observaciones: ''
+    });
+  };
+
+  const handleSavePayment = async () => {
+    try {
+      const paymentDetails = {
+        id_protocolo: selectedProtocoloId,
+        importe: parseFloat(paymentData.importe),
+        medio_pago: paymentData.medioPago,
+        observaciones: paymentData.observaciones
+      };
+
+      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/pagos`, paymentDetails);
+
+      alert('Pago acreditado correctamente');
+      handleClosePaymentDialog();
+    } catch (error) {
+      console.error('Error al acreditar el pago:', error);
+      alert('Error al acreditar el pago');
+    }
+  };
+
   const renderFormContent = (step) => {
     switch (step) {
       case 0:
@@ -415,10 +631,10 @@ const TablaRegistros = () => {
         borderRadius="8px"
       >
         <Box>
-          <strong>Análisis Completados:</strong> <span style={{ color: "green" }}>1000</span>
+          <strong>Análisis Completados:</strong> <span style={{ color: "green" }}>X</span>
         </Box>
         <Box>
-          <strong>Análisis Pendientes:</strong> <span style={{ color: "orange" }}>300</span>
+          <strong>Análisis Pendientes:</strong> <span style={{ color: "orange" }}>Y</span>
         </Box>
       </Box>
 
@@ -534,10 +750,10 @@ const TablaRegistros = () => {
                           }}
                           onClose={handleCloseMenu}
                         >
-                          <MenuItem onClick={handleCloseMenu}>Ver</MenuItem>
+                          <MenuItem onClick={() => handleOpenPaymentDialog(selectedProtocoloId)}>Acreditar Pago</MenuItem>
                           <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Editar</MenuItem>
-                          <MenuItem onClick={handleCloseMenu}>Descargar</MenuItem>
-                          <MenuItem onClick={handleCloseMenu}>Eliminar</MenuItem>
+                          <MenuItem onClick={() => handleDownload(selectedProtocoloId)}>Descargar</MenuItem>                          
+                          <MenuItem onClick={() => handleDelete(selectedProtocoloId)}>Eliminar</MenuItem>
                         </Menu>
 
                         {/* Diálogo con formulario */}
@@ -600,6 +816,54 @@ const TablaRegistros = () => {
         </Select>
         <Pagination count={totalPages} page={page} onChange={handlePageChange} color="primary" />
       </Box>
+
+      <Dialog open={openPaymentDialog} onClose={handleClosePaymentDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Acreditar Pago para Protocolo N° ({selectedProtocoloId})</DialogTitle>
+        <DialogContent>
+          <TextField
+            margin="dense"
+            id="importe"
+            label="Importe"
+            type="number"
+            fullWidth
+            variant="standard"
+            value={paymentData.importe}
+            onChange={(e) => setPaymentData({ ...paymentData, importe: e.target.value })}
+          />
+          <TextField
+            margin="dense"
+            id="medioPago"
+            label="Medio de Pago"
+            select
+            fullWidth
+            variant="standard"
+            value={paymentData.medioPago}
+            onChange={(e) => setPaymentData({ ...paymentData, medioPago: e.target.value })}
+          >
+            <MenuItem value="Efectivo">Efectivo</MenuItem>
+            <MenuItem value="MercadoPago">MercadoPago</MenuItem>
+            <MenuItem value="Transferencia Bancaria">Transferencia Bancaria</MenuItem>
+          </TextField>
+          <TextField
+            margin="dense"
+            id="observaciones"
+            label="Observaciones"
+            type="text"
+            fullWidth
+            variant="standard"
+            value={paymentData.observaciones}
+            onChange={(e) => setPaymentData({ ...paymentData, observaciones: e.target.value })}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePaymentDialog} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={handleSavePayment} color="primary">
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

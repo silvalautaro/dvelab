@@ -43,41 +43,40 @@ const getProtocoloId = async (req, res) => {
 const addProtocolo = async (req, res) => {
   try {
     const body = req.body;
-    console.log('Datos recibidos para crear el protocolo:',
-      body);
-      try{
-        let veterinaria = body.veterinaria;
-        if (!veterinaria) {
-            const nuevaVeterinaria = await createVeterinaria({ nombre: body.nuevoVeterinaria });
-            veterinaria = nuevaVeterinaria.id_veterinaria;
-        } else {
-            const veterinariaExistente = await getVeterinariaById(veterinaria);
-            veterinaria = veterinariaExistente.id_veterinaria;
-        }
-        const addPaciente = await createPaciente({
-          nombre: body.nombre,
-          id_especie: body.especie,
-          id_raza: body.raza,
-          id_sexo: body.sexo,
-          tutor: body.tutor,
-          edad: body.edad
-        });
-        const pacienteId = addPaciente.id_paciente; 
-        const protocolo = {
-          id_protocolo: body.id_protocolo,
-          id_paciente: pacienteId,
-          id_veterinaria: veterinaria,
-          id_profesional: body.profesional,
-          fecha: body.fecha,
-          importe: body.importe,
-          id_estudio: body.estudio,
-          id_estado: 1
-        };
-        await createProtocolo(protocolo);
-      }catch(error){
-        console.error('Error al crear el protocolo:', error);
-        res.status(500).json({ error: 'Error al crear el protocolo' });
+    console.log('Datos recibidos para crear el protocolo:', body);
+    try {
+      let veterinaria = body.veterinaria;
+      if (!veterinaria) {
+        const nuevaVeterinaria = await createVeterinaria({ nombre: body.nuevoVeterinaria });
+        veterinaria = nuevaVeterinaria.id_veterinaria;
+      } else {
+        const veterinariaExistente = await getVeterinariaById(veterinaria);
+        veterinaria = veterinariaExistente.id_veterinaria;
       }
+      const addPaciente = await createPaciente({
+        nombre: body.nombre,
+        id_especie: body.especie,
+        id_raza: body.raza,
+        id_sexo: body.sexo,
+        tutor: body.tutor,
+        edad: body.edad
+      });
+      const pacienteId = addPaciente.id_paciente;
+      const protocolo = {
+        id_protocolo: body.id_protocolo,
+        id_paciente: pacienteId,
+        id_veterinaria: veterinaria,
+        id_profesional: body.profesional,
+        fecha: body.fecha,
+        importe: body.importe,
+        id_estudio: body.estudio,
+        id_estado: 1
+      };
+      await createProtocolo(protocolo);
+    } catch (error) {
+      console.error('Error al crear el protocolo:', error);
+      res.status(500).json({ error: 'Error al crear el protocolo', details: error.message });
+    }
     res.status(201).json({
       result: 'Protocolo creado',
       status: 201,
