@@ -10,7 +10,7 @@ const createFormulaLeucocitaria = async (data) => {
 };
 
 const getFormulaLeucocitaria = async (id_protocolo) => {
-  return await FormulaLeucocitaria.findOne({
+  return await FormulaLeucocitaria.findAll({
     where: { id_protocolo },
   });
 }

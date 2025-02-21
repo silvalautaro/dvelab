@@ -27,6 +27,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import logoUrl from '../assets/logo.png';
+import firmaUrl from '../assets/firma.png';
 import axios from 'axios';
 
 const steps = ['HEMOGRAMA', 'Formula Leucocitaria', 'BIOQUIMICA SANGUINEA', 'Coagulograma'];
@@ -395,140 +396,299 @@ const TablaRegistros = () => {
       const bioquimicaSanguineaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/bioquimica-sanguinea/${id_protocolo}`);
       const profesionalResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/profesionales/${protocoloResponse.data.result.id_profesional}`);
       const pacienteResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/pacientes/${protocoloResponse.data.result.id_paciente}`);
-  
+    
       const protocolo = protocoloResponse.data.result;
       const hemograma = hemogramaResponse.data.result;
-      const formulaLeucocitaria = Array.isArray(formulaLeucocitariaResponse.data.result) ? formulaLeucocitariaResponse.data.result : [formulaLeucocitariaResponse.data.result];
+      const formulaLeucocitaria = Array.isArray(formulaLeucocitariaResponse.data.result) 
+        ? formulaLeucocitariaResponse.data.result 
+        : [formulaLeucocitariaResponse.data.result];
       const coagulograma = coagulogramaResponse.data.result;
       const bioquimicaSanguinea = bioquimicaSanguineaResponse.data.result;
       const profesional = profesionalResponse.data.result;
       const paciente = pacienteResponse.data.result;
-  
+      
+      // Obtener nombres reales de especie, raza y sexo
+      const especiesResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/especies`);
+      const especieEncontrada = especiesResponse.data.result.find(e => e.id_especie === paciente.id_especie);
+      const especie = especieEncontrada ? especieEncontrada.tipo : "No disponible";
+
+      const razasResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/razas`);
+      const razaEncontrada = razasResponse.data.result.find(r => r.id_raza === paciente.id_raza);
+      const raza = razaEncontrada ? razaEncontrada.nombre : "No disponible";
+
+      const sexosResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/generos`);
+      const sexoEncontrado = sexosResponse.data.result.find(s => s.id_sexo === paciente.id_sexo);
+      const sexo = sexoEncontrado ? sexoEncontrado.sexo : "No disponible";
+
+      const estudioResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/estudios/${protocolo.id_estudio}`);
+
+      const estudioSolicitado = estudioResponse.data.result.estudio || "No disponible";
+
       const doc = new jsPDF();
-  
+
       // Logo
       const logoHeight = 25; // Alto deseado
       const logoWidth = logoHeight * (1761 / 642); // Ancho calculado para mantener la proporción
-  
-      doc.addImage(logoUrl, 'PNG', 14, 10, logoWidth, logoHeight);
-  
+      const logoX = 14; // Posición en X del logo
+      const logoY = 10; // Posición en Y del logo
+      doc.addImage(logoUrl, 'PNG', logoX, logoY, logoWidth, logoHeight);
+
+      // Configurar fuente y tamaño antes del texto
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+
+      const textX = logoX + logoWidth + 110; // Ajusta la posición en X
+      const textY = logoY + 6; // Alineado con el logo
+
+      // Asegurar alineación manualmente
+      const maxWidth = 80; // Ancho máximo para la alineación izquierda
+      doc.text("Rivadavia 1626  -   CP 6700", textX, textY, { align: "right", maxWidth });
+      doc.text("Bs. As. -  Luján", textX, textY + 5, { align: "right", maxWidth });
+      doc.text("Tel : (02323) 15461414", textX, textY + 10, { align: "right", maxWidth });
+    
       // Encabezado con datos del protocolo
-      doc.setFontSize(12);
-      let yPosition = 50; // Posición inicial debajo del logo
-  
-      doc.text(`Número de Protocolo: ${protocolo.id_protocolo || ''}`, 14, yPosition);
-      yPosition += 10;
-      doc.text(`Fecha: ${protocolo.fecha || ''}`, 14, yPosition);
-      yPosition += 10;
-      doc.text(`Profesional Veterinaria: ${profesional.nombre || ''}`, 14, yPosition);
-      yPosition += 10;
-      doc.text(`Tutor: ${paciente.tutor || ''}`, 14, yPosition);
-      yPosition += 10;
-      doc.text(`Paciente: ${paciente.nombre || ''}`, 14, yPosition);
-      yPosition += 10;
-      doc.text(`Especie: ${paciente.especie || ''}`, 14, yPosition);
-      yPosition += 10;
-      doc.text(`Raza: ${paciente.raza || ''}`, 14, yPosition);
-      yPosition += 10;
-      doc.text(`Sexo: ${paciente.sexo || ''}`, 14, yPosition);
-      yPosition += 10;
-      doc.text(`Edad: ${paciente.edad || ''}`, 14, yPosition);
-      yPosition += 10;
-      doc.text(`Estudio Solicitado: ${protocolo.estudio_solicitado || ''}`, 14, yPosition);
-      yPosition += 20; // Espacio adicional antes del título
-  
-      // Título
-      doc.setFontSize(16);
-      doc.text("Informe de Laboratorio", 14, yPosition);
-      yPosition += 10;
-  
-      // Tabla de Hemograma
-      doc.setFontSize(12);
-      doc.text("Hemograma", 14, yPosition);
-      const hemogramaColumnas = ["Parámetro", "Resultado", "Unidad"];
-      const hemogramaFilas = [
-        ["Recuento Glóbulos Rojos", hemograma.recuento_globulos_rojos || '', "M/ul"],
-        ["Hemoglobina", hemograma.hemoglobina || '', "g/dl"],
-        ["Hematocrito", hemograma.hematocrito || '', "%"],
-        ["VCM", hemograma.vcm || '', "fL"],
-        ["HCM", hemograma.hcm || '', "pg"],
-        ["CHCM", hemograma.chcm || '', "%"],
-        ["RDW", hemograma.rdw || '', "%"],
-        ["Índice Reticulocitario", hemograma.indice_reticulocitario || '', "-"],
-        ["Recuento Plaquetario", hemograma.recuento_plaquetario || '', "K/ul"],
-        ["Frotis", hemograma.frotis || '', ""],
-        ["Recuento Leucocitario", hemograma.recuento_leucocitario || '', "K/ul"]
-      ];
       doc.autoTable({
-        head: [hemogramaColumnas],
-        body: hemogramaFilas,
-        startY: yPosition + 10
+        startY: 36,
+        theme: 'grid',
+        styles: { halign: 'left', fontSize: 9 },
+        headStyles: { fillColor: [255, 255, 255], textColor: 0, fontSize: 9 },
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 40 } },
+        head: [
+          ['', '']],
+        body: [
+        ['Número de Protocolo', protocolo.id_protocolo || ''],
+        ['Fecha', protocolo.fecha || ''],
+        ['Profesional Veterinario', profesional.nombre || ''],
+        ['Tutor', paciente.tutor || ''],
+        ['Estudio Solicitado', estudioSolicitado || '']]
       });
-  
+
+      // Posición X para la segunda tabla (ajusta el valor según el ancho de la primera tabla)
+      const posicionX = 120;
+
+      doc.autoTable({
+        startY: 36,
+        theme: 'grid',
+        styles: { halign: 'left', fontSize: 9 },
+        headStyles: { fillColor: [255, 255, 255], textColor: 0, fontSize: 9 },
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 40 } },
+        margin: { left: posicionX }, // Mueve la tabla hacia la derecha
+        head: [
+          ['', '']],
+        body: [
+        ['Paciente', paciente.nombre || ''],
+        ['Especie', especie || ''],
+        ['Raza', raza || ''],
+        ['Sexo', sexo || ''],
+        ['Edad', paciente.edad || '']]
+      });      
+      
+      // Función para generar tablas con estilo
+      const generarTabla = (titulo, columnas, filas) => {
+        doc.setFont("helvetica", "bold");
+        doc.text(titulo, 14, doc.autoTable.previous.finalY + 12);
+        doc.autoTable({
+          startY: doc.autoTable.previous.finalY + 16,
+          theme: 'grid',
+          styles: { fontSize: 9, cellPadding: 1.37 },
+          columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' }, 3: { halign: 'center' }, 4: { halign: 'center' }, 5: { halign: 'center' }, 6: { halign: 'center' } },
+          headStyles: { fillColor: [0, 168, 89], textColor: 255, fontSize: 9 },
+          head: [columnas],
+          body: filas
+        });
+      };
+
+      // Tabla de Hemograma
+      generarTabla("Hemograma", ["Determinación", "Resultado", "Unidad", "    Valores de referencia\n              (Caninos)", "    Valores de referencia\n              (Felinos)"], [
+        ["Recuento Glóbulos Rojos", hemograma.recuento_globulos_rojos || '', "M/ul", "5.5 - 8", "5 - 10"],
+        ["Hemoglobina", hemograma.hemoglobina || '', "g/dl", "12 - 19", "9 - 15"],
+        ["Hematocrito", hemograma.hematocrito || '', "%", "37 - 55", "27 - 48"],
+        ["VCM", hemograma.vcm || '', "fL", "60 - 79", "40 - 55"],
+        ["HCM", hemograma.hcm || '', "pg", "19 - 25", "12 - 18"],
+        ["CHCM", hemograma.chcm || '', "%", "31 - 36", "29 - 36"],
+        ["RDW", hemograma.rdw || '', "%", "12 - 16", "14 - 18"],
+        ["Índice Reticulocitario", hemograma.indice_reticulocitario || '', "-", { content: ">2 Regenerativa\n<2 Arregenerativa", colSpan: 2 }], // Unir columnas,
+        ["Recuento Plaquetario", hemograma.recuento_plaquetario || '', "K/ul", "180000 - 400000", "200000 - 500000"],
+        ["Frotis", hemograma.frotis || '', "-", "-", "-"],
+        ["Recuento Leucocitario", hemograma.recuento_leucocitario || '', "K/ul", "6000-13000", "5500 - 14000"]
+      ]);
+      
+      // Observaciones - Hemograma
+      doc.setFont("helvetica", "bold");
+      doc.autoTable({
+        startY: doc.autoTable.previous.finalY,
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 1.37 },
+        columnStyles: { 0: { fontStyle: 'bold' }, 1: { halign: 'left', cellWidth: 133.82 } }, // Centrar solo la segunda columna
+        headStyles: { fillColor: [255, 255, 255], textColor: 0, fontSize: 9 },
+        body: [
+          ["Características serie eritroide", "         S/p"],
+          ["Observaciones", "         S/p"],
+          ["Morfología plaquetaria", "         S/p"]
+        ]
+      });
+
       // Mapeo de id_tipo_celula a nombres de tipo de célula
       const tipoCelulasMap = tipoCelulas.reduce((map, tipo) => {
         map[tipo.id_tipo] = tipo.tipo_celula;
         return map;
       }, {});
-  
-      // Tabla de Fórmula Leucocitaria
-      doc.text("Fórmula Leucocitaria", 14, doc.autoTable.previous.finalY + 10);
-      const formulaLeucocitariaColumnas = ["Tipo de Célula", "Relativa", "Absoluta"];
-      const formulaLeucocitariaFilas = formulaLeucocitaria.map((item) => [
-        tipoCelulasMap[item.id_tipo_celula] || item.id_tipo_celula,
-        item.relativa || '',
-        item.absoluta || ''
-      ]);
-      doc.autoTable({
-        head: [formulaLeucocitariaColumnas],
-        body: formulaLeucocitariaFilas,
-        startY: doc.autoTable.previous.finalY + 20
-      });
-  
-      // Tabla de Bioquímica Sanguínea
-      doc.text("Bioquímica Sanguínea", 14, doc.autoTable.previous.finalY + 10);
-      const bioquimicaColumnas = ["Parámetro", "Resultado", "Unidad"];
-      const bioquimicaFilas = [
-        ["Urea", bioquimicaSanguinea.urea || '', "mg/dl"],
-        ["Creatinina", bioquimicaSanguinea.creatinina || '', "mg/dl"],
-        ["Glucemia", bioquimicaSanguinea.glucemia || '', "mg/dl"],
-        ["GPT (ALT)", bioquimicaSanguinea.gpt || '', "U/L"],
-        ["GOT (AST)", bioquimicaSanguinea.got || '', "U/L"],
-        ["Fosfatasa Alcalina Sérica (FAS)", bioquimicaSanguinea.fosfatasa_alcalina || '', "U/L"],
-        ["g-glutamil transferasa (GGT)", bioquimicaSanguinea.g_glutamil_transferasa || '', "U/L"],
-        ["Proteínas Totales", bioquimicaSanguinea.proteinas_totales || '', "g/dl"],
-        ["Albúmina", bioquimicaSanguinea.albumina || '', "g/dl"],
-        ["Globulinas", bioquimicaSanguinea.globulinas || '', "g/dl"],
-        ["Relación Alb/Glob", bioquimicaSanguinea.relacion_alb_glob || '', ""],
-        ["Bilirrubina Total (BT)", bioquimicaSanguinea.bilirrubina_total || '', "mg/dl"],
-        ["Bilirrubina Directa (BD)", bioquimicaSanguinea.bilirrubina_directa || '', "mg/dl"],
-        ["Bilirrubina Indirecta (BI)", bioquimicaSanguinea.bilirrubina_indirecta || '', "mg/dl"],
-        ["Amilasa", bioquimicaSanguinea.amilasa || '', "U/L"],
-        ["Triglicéridos (TAG)", bioquimicaSanguinea.trigliceridos || '', "mg/dl"],
-        ["Colesterol Total (COL)", bioquimicaSanguinea.colesterol_total || '', "mg/dl"],
-        ["Creatinin-P-Kinasa (CPK)", bioquimicaSanguinea.creatinina_p_kinasa || '', "U/L"],
-        ["HDL-Col", bioquimicaSanguinea.hdl_col || '', "mg/dl"],
-        ["LDL-Col", bioquimicaSanguinea.ldl_col || '', "mg/dl"],
-        ["Calcio Total (Ca)", bioquimicaSanguinea.calcio_total || '', "mg/dl"],
-        ["Fósforo (P)", bioquimicaSanguinea.fosforo || '', "mg/dl"],
-        ["Sodio (Na)", bioquimicaSanguinea.sodio || '', "mmol/L"],
-        ["Potasio (K)", bioquimicaSanguinea.potasio || '', "mmol/L"],
-        ["Cloro (Cl)", bioquimicaSanguinea.cloro || '', "mmol/L"]
+
+      const referencias = [
+        ["60 - 77%", "3000 - 11500", "35 - 75%", "2500 - 12500"],
+        ["0 - 3%", "0 - 300", "0 - 3%", "0 - 300"],
+        ["2 - 10%", "100 - 1000", "2 - 12%", "0 - 1000"],
+        ["0 - 2%", "0 - 200", "0 - 12%", "0 - 200"],
+        ["12 - 30%", "1000 - 4800", "20 - 55%", "1500 - 7000"],
+        ["5 - 10%", "150 - 1200", "1 - 4%", "0 - 500"],
+        ["-", "-", "-", "-"],
+        ["-", "-", "-", "-"]
       ];
+
+      // Tabla Fórmula Leucocitaria
+      doc.setFont("helvetica", "bold");
+      doc.text("Fórmula Leucocitaria", 14, doc.autoTable.previous.finalY + 12);
       doc.autoTable({
-        head: [bioquimicaColumnas],
-        body: bioquimicaFilas,
-        startY: doc.autoTable.previous.finalY + 20
+        startY: doc.autoTable.previous.finalY + 16,
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 1.37 },
+        columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' }, 3: { halign: 'center' }, 4: { halign: 'center' }, 5: { halign: 'center' }, 6: { halign: 'center' } },
+        headStyles: { fillColor: [0, 168, 89], textColor: 255, fontSize: 9 },
+        head: [["Tipo de Célula", "Relativa %", "Absoluta (/mm3)", "Referencias\n   Relativa\n  (Caninos)", "Referencias\n  Absoluta\n  (Caninos)", "Referencias\n    Relativa\n   (Felinos)", "Referencias\n  Absoluta\n  (Felinos)"]],
+        body: formulaLeucocitaria.map((celula, index) => [
+          tipoCelulasMap[celula.id_tipo_celula], 
+          celula.relativa || '' , 
+          celula.absoluta || '',
+          referencias[index] ? referencias[index][0] : '',
+          referencias[index] ? referencias[index][1] : '',
+          referencias[index] ? referencias[index][2] : '',
+          referencias[index] ? referencias[index][3] : ''
+        ])
       });
-  
+
+      // Observaciones - Fórmula Leucocitaria
+      doc.setFont("helvetica", "bold");
+      doc.autoTable({
+        startY: doc.autoTable.previous.finalY,
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 1.375 },
+        columnStyles: { 0: { fontStyle: 'bold' }, 1: { halign: 'left', cellWidth: 140.52 } }, // Centrar solo la segunda columna
+        headStyles: { fillColor: [255, 255, 255], textColor: 0, fontSize: 9 },
+        body: [
+          ["Observaciones", "       S/p"], // La primera celda ocupa su espacio, y "S/p" cae en la segunda columna
+        ]
+      });
+      
+      doc.addPage();
+
+      // Tabla de Bioquímica Sanguínea
+      doc.setFont("helvetica", "bold");
+      doc.text("Bioquímica Sanguínea", 14, 20);
+      doc.autoTable({
+        startY: 20 + 4,
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 1.37 },
+        columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' }, 3: { halign: 'center' }, 4: { halign: 'center' } },
+        headStyles: { fillColor: [0, 168, 89], textColor: 255, fontSize: 9 },
+        head: [["Determinación", "Resultado", "Unidad", "    Valores de referencia\n              (Caninos)", "    Valores de referencia\n              (Felinos)"]],
+        body:  [
+          ["Urea", bioquimicaSanguinea.urea || '', "mg/dl", "20 - 60", "20 - 60"],
+          ["Creatinina", bioquimicaSanguinea.creatinina || '', "mg/dl", "Hasta 1.6", "Hasta 1.8"],
+          ["Glucemia", bioquimicaSanguinea.glucemia || '', "mg/dl", "60 - 110", "60-180"],
+          ["GPT (ALT)", bioquimicaSanguinea.gpt || '', "U/L", "Hasta 60", "Hasta 60"],
+          ["GOT (AST)", bioquimicaSanguinea.got || '', "U/L", "Hasta 50", "Hasta 50"],
+          ["Fosfatasa Alcalina Sérica (FAS)", bioquimicaSanguinea.fosfatasa_alcalina || '', "U/L", "Hasta 250 /Cach hasta 500", "Hasta 100"],
+          ["g-glutamil transferasa (GGT)", bioquimicaSanguinea.g_glutamil_transferasa || '', "U/L", "Hasta 10", "Hasta 10"],
+          ["Proteínas Totales", bioquimicaSanguinea.proteinas_totales || '', "g/dl", "5 - 7.5", "5.5 - 7.8"],
+          ["Albúmina", bioquimicaSanguinea.albumina || '', "g/dl", "2.5 - 4", "2.5 - 3.5"],
+          ["Globulinas", bioquimicaSanguinea.globulinas || '', "g/dl", "2.5 - 3.8", "3.0 - 4.0"],
+          ["Relación Alb/Glob", bioquimicaSanguinea.relacion_alb_glob || '', "/", "0.6 - 1.2", "0.6 - 1.2"],
+          ["Bilirrubina Total (BT)", bioquimicaSanguinea.bilirrubina_total || '', "mg/dl", "Hasta 1", "Hasta 1"],
+          ["Bilirrubina Directa (BD)", bioquimicaSanguinea.bilirrubina_directa || '', "mg/dl", "Hasta 0.3", "Hasta 0.3"],
+          ["Bilirrubina Indirecta (BI)", bioquimicaSanguinea.bilirrubina_indirecta || '', "mg/dl", "Hasta 0.7", "Hasta 0.7"],
+          ["Amilasa", bioquimicaSanguinea.amilasa || '', "U/L", "Hasta 1500", "Hasta 1500"],
+          ["Triglicéridos (TAG)", bioquimicaSanguinea.trigliceridos || '', "mg/dl", "50 - 100", "50 - 100"],
+          ["Colesterol Total (COL)", bioquimicaSanguinea.colesterol_total || '', "mg/dl", "125 - 250", "125 - 250"],
+          ["Creatinin-P-Kinasa (CPK)", bioquimicaSanguinea.creatinina_p_kinasa || '', "U/L", "Hasta 250", "Hasta 250"],
+          ["HDL-Col", bioquimicaSanguinea.hdl_col || '', "mg/dl", "Mayor a 100", "Mayor a 100"],
+          ["LDL-Col", bioquimicaSanguinea.ldl_col || '', "mg/dl", "Menor a 60", "Menor a 60"],
+          ["Calcio Total (Ca)", bioquimicaSanguinea.calcio_total || '', "mg/dl", "8 - 12", "8 - 12"],
+          ["Fósforo (P)", bioquimicaSanguinea.fosforo || '', "mg/dl", "2.1 - 5.6 / cach hasta 9.0", "2.1 - 5.6 / cach hasta 8.0"],
+          ["Sodio (Na)", bioquimicaSanguinea.sodio || '', "mmol/L", "143 - 153", "143 - 153"],
+          ["Potasio (K)", bioquimicaSanguinea.potasio || '', "mmol/L", "4 - 5,4", "4 - 5,4"],
+          ["Cloro (Cl)", bioquimicaSanguinea.cloro || '', "mmol/L", "109 - 120", "109 - 120"]
+        ]
+      });  
+
+      // Observaciones - Bioquímica Sanguínea
+      doc.setFont("helvetica", "bold");
+      doc.autoTable({
+        startY: doc.autoTable.previous.finalY,
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 1.37 },
+        columnStyles: { 0: { fontStyle: 'bold' } , 1: { halign: 'left', cellWidth: 127.38 } }, // Centrar solo la segunda columna
+        headStyles: { fillColor: [255, 255, 255], textColor: 0, fontSize: 9 },
+        body: [
+          ["Observaciones", "        S/p"],
+        ]
+      });      
+
+      // Tabla de Coagulograma
+      doc.setFont("helvetica", "bold");
+      doc.text("Coagulograma", 14, doc.autoTable.previous.finalY + 12);
+      doc.autoTable({
+        startY: doc.autoTable.previous.finalY + 16,
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 1.37 },
+        columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' } },
+        headStyles: { fillColor: [0, 168, 89], textColor: 255, fontSize: 9 },
+        head: [["Determinación", "                  Resultado", "                  Referencia"]],
+        body:  [
+          ["Tiempo de Protrombina", coagulograma.tiempo_protrombina || '', "7 - 11 segundos"],
+          ["Tiempo de Tromboplastina Parcial", coagulograma.tiempo_tromboplastina || '', "15 - 21 segundos"]
+        ]
+      });
+
+      // Firma
+      const firmaHeight = 25; // Alto deseado
+      const firmaWidth = firmaHeight * (119 / 95); // Ancho calculado para mantener la proporción
+      const firmaX = 153; // Posición en X de la firma
+      const firmaY = 240; // Posición en Y de la firma
+      doc.addImage(firmaUrl, 'PNG', firmaX, firmaY, firmaWidth, firmaHeight);
+
+      //Aclaración
+      doc.setFont("helvetica", "bold");
+      doc.text("Cinthya Giselle Gallardo\nVETERINARIA - UBA\nM.P. 13612", 170, 270, { align: "center" });
+      
+      // Pie de página
+      const pageCount = doc.getNumberOfPages(); // Obtiene el número total de páginas
+      const pageWidth = doc.internal.pageSize.width; // Ancho de la página
+      const emailText = "E-mail: diagnovete.lab@gmail.com";
+      const emailX = (pageWidth - doc.getTextWidth(emailText)) / 2; // Centrar el texto
+
+      // Recorre todas las páginas y agrega el pie de página
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i); // Ir a la página i
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+
+      // Agregar el email centrado
+      doc.setTextColor(75, 75, 75); 
+      doc.text(emailText, emailX, doc.internal.pageSize.height - 8);
+
+      // Agregar el número de página alineado a la derecha
+      doc.text(`${i}`, pageWidth - 15, doc.internal.pageSize.height - 8);
+}
+    
       // Guardar el PDF
       doc.save(`informe_protocolo_${id_protocolo}.pdf`);
-  
+    
     } catch (error) {
       console.error("Error al generar el PDF:", error);
     }
-  };
-
+    handleCloseMenu();
+};  
+  
   const handleDelete = async (id_protocolo) => {
     const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este protocolo?");
     if (confirmDelete) {
@@ -595,7 +755,7 @@ const TablaRegistros = () => {
   const renderFormContent = (step) => {
     switch (step) {
       case 0:
-        return <TextFieldGroup labels={['Recuento Glóbulos Rojos', 'Hemoglobina', 'Hematocrito', 'VCM', 'HCM', 'CHCM', 'RDW', 'Índice Reticulocitario', 'Recuento Plaquetario', 'Frotis', 'Recuento Leucocitario']} data={hemogramaData} handleChange={handleHemogramaChange} fieldRefs={fieldRefs} handleKeyDown={handleKeyDown} />;
+        return <TextFieldGroup labels={['Recuento Glóbulos Rojos', 'Hemoglobina', 'Hematocrito', 'VCM', 'HCM', 'CHCM', 'RDW', 'Índice Reticulocitario', 'Recuento Plaquetario', 'Frotis', 'Recuento Leucocitario', 'Características serie eritroide', 'Observaciones', 'Morfología plaquetaria']} data={hemogramaData} handleChange={handleHemogramaChange} fieldRefs={fieldRefs} handleKeyDown={handleKeyDown} />;
       case 1:
         return tipoCelulas.length > 0 ? (
           <TextFieldGroupWithRelAbs 
@@ -609,7 +769,7 @@ const TablaRegistros = () => {
           <p>Cargando tipos de células...</p>
         );
       case 2:
-        return <TextFieldGroup labels={['Urea', 'Creatinina', 'Glucemia', 'GPT (ALT)', 'GOT (AST)', 'Fosfatasa Alcalina Sérica (FAS)', 'g-glutamil transferasa (GGT)', 'Proteínas Totales', 'Albúmina', 'Globulinas', 'Relación Alb/Glob', 'Bilirrubina Total (BT)', 'Bilirrubina Directa (BD)', 'Bilirrubina Indirecta (BI)', 'Amilasa', 'Triglicéridos (TAG)', 'Colesterol Total (COL)', 'Creatinin-P-Kinasa (CPK)', 'HDL-Col', 'LDL-Col', 'Calcio Total (Ca)', 'Fósforo (P)', 'Sodio (Na)', 'Potasio (K)', 'Cloro (Cl)']} data={bioquimicaSanguineaData} handleChange={handleBioquimicaSanguineaChange} fieldRefs={fieldRefs} handleKeyDown={handleKeyDown} />;
+        return <TextFieldGroup labels={['Urea', 'Creatinina', 'Glucemia', 'GPT (ALT)', 'GOT (AST)', 'Fosfatasa Alcalina Sérica (FAS)', 'g-glutamil transferasa (GGT)', 'Proteínas Totales', 'Albúmina', 'Globulinas', 'Relación Alb/Glob', 'Bilirrubina Total (BT)', 'Bilirrubina Directa (BD)', 'Bilirrubina Indirecta (BI)', 'Amilasa', 'Triglicéridos (TAG)', 'Colesterol Total (COL)', 'Creatinin-P-Kinasa (CPK)', 'HDL-Col', 'LDL-Col', 'Calcio Total (Ca)', 'Fósforo (P)', 'Sodio (Na)', 'Potasio (K)', 'Cloro (Cl)', 'Observaciones']} data={bioquimicaSanguineaData} handleChange={handleBioquimicaSanguineaChange} fieldRefs={fieldRefs} handleKeyDown={handleKeyDown} />;
       case 3:
         return <TextFieldGroup labels={['Tiempo de Protrombina- T.P', 'Tiempo de tromboplastina parcial activado - KPTT']} data={coagulogramaData} handleChange={handleCoagulogramaChange} fieldRefs={fieldRefs} handleKeyDown={handleKeyDown} />;
       default:
