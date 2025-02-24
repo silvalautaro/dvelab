@@ -75,7 +75,9 @@ Protocolo.associate = (models) => {
     Protocolo.hasMany(models.ArchivoPdf, {
         foreignKey: 'id_protocolo'
     });
-    
+    Protocolo.hasMany(models.Pago, {
+        foreignKey: 'id_protocolo'
+    });
 }
 
 module.exports = Protocolo;

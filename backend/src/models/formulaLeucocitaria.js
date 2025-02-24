@@ -23,6 +23,10 @@ const FormulaLeucocitaria = sequelize.define('FormulaLeucocitaria', {
         type: DataTypes.INTEGER,
         allowNull: true,
     },
+    observaciones: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    }
     }, {
     tableName: 'FormulaLeucocitaria',
     timestamps: false,

@@ -54,6 +54,18 @@ const Hemograma = sequelize.define('Hemograma', {
   recuento_leucocitario: {
     type: DataTypes.INTEGER,
     allowNull: true,
+  },
+  caracteristicas_serie_eritroide:{
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  observaciones: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  morfologia_plaquetaria:{
+    type: DataTypes.STRING,
+    allowNull: true,
   }
 }, {
   tableName: 'Hemogramas',

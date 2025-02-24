@@ -110,6 +110,10 @@ const Bioquimica_Sanguinea = sequelize.define('Bioquimica_Sanguinea', {
     cloro: {
         type: DataTypes.DECIMAL(5, 2),
         allowNull: true,
+    },
+    observaciones:{
+        type: DataTypes.TEXT,
+        allowNull: true,
     }
 },{
     tableName: 'Bioquimica_Sanguinea',

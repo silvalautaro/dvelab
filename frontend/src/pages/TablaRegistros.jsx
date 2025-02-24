@@ -57,7 +57,7 @@ const removeAccents = (str) => {
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 };
 
-const TextFieldGroup = ({ labels, data, handleChange, fieldRefs, handleKeyDown }) => (
+const TextFieldGroup = ({ labels, data, handleChange, fieldRefs, handleKeyDown, disabled }) => (
   <div>
     {labels.map((label, index) => {
       const id = removeAccents(label.toLowerCase().replace(/ /g, '-'));
@@ -75,13 +75,14 @@ const TextFieldGroup = ({ labels, data, handleChange, fieldRefs, handleKeyDown }
           onChange={handleChange}
           inputRef={(el) => (fieldRefs.current[index] = el)}
           onKeyDown={(event) => handleKeyDown(event, index)}
+          disabled={disabled}
         />
       );
     })}
   </div>
 );
 
-const TextFieldGroupWithRelAbs = ({ labels, data, handleChange, fieldRefs, handleKeyDown }) => (
+const TextFieldGroupWithRelAbs = ({ labels, data, handleChange, handleObservacionesChange, fieldRefs, handleKeyDown, disabled }) => (
   <div>
     {labels.map((label, index) => {
       const id = removeAccents(label.toLowerCase().replace(/ /g, '-'));
@@ -101,6 +102,7 @@ const TextFieldGroupWithRelAbs = ({ labels, data, handleChange, fieldRefs, handl
             inputRef={(el) => (fieldRefs.current[index] = el)}
             onKeyDown={(event) => handleKeyDown(event, index)}
             style={{ marginRight: '10px' }}
+            disabled={disabled}
           />
           <TextField
             margin="dense"
@@ -112,10 +114,22 @@ const TextFieldGroupWithRelAbs = ({ labels, data, handleChange, fieldRefs, handl
             onChange={(e) => handleChange(e, index, 'absoluta')}
             inputRef={(el) => (fieldRefs.current[index + labels.length] = el)}
             onKeyDown={(event) => handleKeyDown(event, index + labels.length)}
+            disabled={disabled}
           />
         </Box>
       );
     })}
+    <TextField
+      margin="dense"
+      id="observaciones"
+      label="Observaciones"
+      type="text"
+      fullWidth
+      variant="standard"
+      value={data['observaciones'] || ''}
+      onChange={handleObservacionesChange}
+      disabled={disabled}
+    />
   </div>
 );
 
@@ -144,6 +158,8 @@ const TablaRegistros = () => {
     medioPago: '',
     observaciones: ''
   });
+  const [completados, setCompletados] = useState([]);
+  const [pendientes, setPendientes] = useState([]);
 
   useEffect(() => {
     const fetchEstados = async () => {
@@ -158,6 +174,10 @@ const TablaRegistros = () => {
       try {
         const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos`);
         setData(response.data.result);
+        const completadosCount = response.data.result.filter((item) => item.id_estado === 3).length;
+        setCompletados(completadosCount);
+        const pendientesCount = response.data.result.filter((item) => item.id_estado === 1 || item.id_estado === 2).length;
+        setPendientes(pendientesCount);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -175,7 +195,7 @@ const TablaRegistros = () => {
     fetchEstados();
     fetchTipoCelulas();
   }, []);
-
+ 
   const handleEstadoChange = (e) => {setEstado(e.target.value); console.log(e.target.value);}
   const handleNumeroProtocoloChange = (e) => {setNumeroProtocolo(e.target.value); console.log(e.target.value)};
 
@@ -185,6 +205,130 @@ const TablaRegistros = () => {
 
   const handleFechaFinChange = (event) => {
     setFechaFin(event.target.value);
+  };
+
+  const handleFinalize = async () => {
+    try {
+
+      const convertToNumberOrNull = (value) => {
+        const number = parseFloat(value);
+        return isNaN(number) ? null : number;
+      };
+
+      const addHemograma = {
+        id_protocolo: selectedProtocoloId,
+        recuento_globulos_rojos: convertToNumberOrNull(hemogramaData['recuento-globulos-rojos']),
+        hemoglobina: convertToNumberOrNull(hemogramaData['hemoglobina']),
+        hematocrito: convertToNumberOrNull(hemogramaData['hematocrito']),
+        vcm: convertToNumberOrNull(hemogramaData['vcm']),
+        hcm: convertToNumberOrNull(hemogramaData['hcm']),
+        chcm: convertToNumberOrNull(hemogramaData['chcm']),
+        rdw: convertToNumberOrNull(hemogramaData['rdw']),
+        indice_reticulocitario: convertToNumberOrNull(hemogramaData['indice-reticulocitario']),
+        recuento_plaquetario: convertToNumberOrNull(hemogramaData['recuento-plaquetario']),
+        frotis: hemogramaData['frotis'] || null,
+        recuento_leucocitario: convertToNumberOrNull(hemogramaData['recuento-leucocitario']),
+        caracteristicas_serie_eritroide: hemogramaData['caracteristicas-serie-eritroide'] || null,
+        observaciones: hemogramaData['observaciones'] || null,
+        morfologia_plaquetaria: hemogramaData['morfologia-plaquetaria'] || null
+      };
+      const addBioquimica = {
+        id_protocolo: selectedProtocoloId,
+        urea: convertToNumberOrNull(bioquimicaSanguineaData['urea']),
+        creatinina: convertToNumberOrNull(bioquimicaSanguineaData['creatinina']),
+        glucemia: convertToNumberOrNull(bioquimicaSanguineaData['glucemia']),
+        gpt: convertToNumberOrNull(bioquimicaSanguineaData['gpt-(alt)']),
+        got: convertToNumberOrNull(bioquimicaSanguineaData['got-(ast)']),
+        fosfatasa_alcalina: convertToNumberOrNull(bioquimicaSanguineaData['fosfatasa-alcalina-serica-(fas)']),
+        g_glutamil_transferasa: convertToNumberOrNull(bioquimicaSanguineaData['g-glutamil-transferasa-(ggt)']),
+        proteinas_totales: convertToNumberOrNull(bioquimicaSanguineaData['proteinas-totales']),
+        albumina: convertToNumberOrNull(bioquimicaSanguineaData['albumina']),
+        globulinas: convertToNumberOrNull(bioquimicaSanguineaData['globulinas']),
+        relacion_alb_glob: convertToNumberOrNull(bioquimicaSanguineaData['relacion-alb/glob']),
+        bilirrubina_total: convertToNumberOrNull(bioquimicaSanguineaData['bilirrubina-total-(bt)']),
+        bilirrubina_directa: convertToNumberOrNull(bioquimicaSanguineaData['bilirrubina-directa-(bd)']),
+        bilirrubina_indirecta: convertToNumberOrNull(bioquimicaSanguineaData['bilirrubina-indirecta-(bi)']),
+        amilasa: convertToNumberOrNull(bioquimicaSanguineaData['amilasa']),
+        trigliceridos: convertToNumberOrNull(bioquimicaSanguineaData['trigliceridos-(tag)']),
+        colesterol_total: convertToNumberOrNull(bioquimicaSanguineaData['colesterol-total-(col)']),
+        creatinina_p_kinasa: convertToNumberOrNull(bioquimicaSanguineaData['creatinin-p-kinasa-(cpk)']),
+        hdl_col: convertToNumberOrNull(bioquimicaSanguineaData['hdl-col']),
+        ldl_col: convertToNumberOrNull(bioquimicaSanguineaData['ldl-col']),
+        calcio_total: convertToNumberOrNull(bioquimicaSanguineaData['calcio-total-(ca)']),
+        fosforo: convertToNumberOrNull(bioquimicaSanguineaData['fosforo-(p)']),
+        sodio: convertToNumberOrNull(bioquimicaSanguineaData['sodio-(na)']),
+        potasio: convertToNumberOrNull(bioquimicaSanguineaData['potasio-(k)']),
+        cloro: convertToNumberOrNull(bioquimicaSanguineaData['cloro-(cl)']),
+        observaciones: bioquimicaSanguineaData['observaciones'] || null
+      };
+      const addCoagulograma = {
+        id_protocolo: selectedProtocoloId,
+        tiempo_protrombina: convertToNumberOrNull(coagulogramaData['tiempo-de-protrombina--t.p']),
+        tiempo_tromboplastina: convertToNumberOrNull(coagulogramaData['tiempo-de-tromboplastina-parcial-activado---kptt'])
+      };
+
+      const addFormulaL = tipoCelulas.map(tc => ({
+        id_tipo_celula: tc.id_tipo,
+        id_protocolo: selectedProtocoloId,
+        relativa: convertToNumberOrNull(formulaLeucocitariaData[`${removeAccents(tc.tipo_celula.toLowerCase().replace(/ /g, '-'))}-relativa`]),
+        absoluta: convertToNumberOrNull(formulaLeucocitariaData[`${removeAccents(tc.tipo_celula.toLowerCase().replace(/ /g, '-'))}-absoluta`]),
+        observaciones: formulaLeucocitariaData['observaciones'] || null
+      }));
+
+      // Verificar si los datos ya existen
+      const hemogramaExists = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/hemogramas/${selectedProtocoloId}`).catch(error => {
+        if (error.response && error.response.status === 404) return null;
+        throw error;
+      });
+      const bioquimicaExists = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/bioquimica-sanguinea/${selectedProtocoloId}`).catch(error => {
+        if (error.response && error.response.status === 404) return null;
+        throw error;
+      });
+      const coagulogramaExists = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/coagulogramas/${selectedProtocoloId}`).catch(error => {
+        if (error.response && error.response.status === 404) return null;
+        throw error;
+      });
+      const formulaLeucocitariaExists = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/formula-leucocitaria/${selectedProtocoloId}`).catch(error => {
+        if (error.response && error.response.status === 404) return null;
+        throw error;
+      });
+  
+      // Actualizar o crear registros según corresponda
+      if (hemogramaExists && hemogramaExists.data.result) {
+        await axios.put(`${process.env.REACT_APP_BACKEND_URL}/hemogramas/${selectedProtocoloId}`, addHemograma);
+      } else {
+        await axios.post(`${process.env.REACT_APP_BACKEND_URL}/hemogramas`, addHemograma);
+      }
+  
+      if (bioquimicaExists && bioquimicaExists.data.result) {
+        await axios.put(`${process.env.REACT_APP_BACKEND_URL}/bioquimica-sanguinea/${selectedProtocoloId}`, addBioquimica);
+      } else {
+        await axios.post(`${process.env.REACT_APP_BACKEND_URL}/bioquimica-sanguinea`, addBioquimica);
+      }
+  
+      if (coagulogramaExists && coagulogramaExists.data.result) {
+        await axios.put(`${process.env.REACT_APP_BACKEND_URL}/coagulogramas/${selectedProtocoloId}`, addCoagulograma);
+      } else {
+        await axios.post(`${process.env.REACT_APP_BACKEND_URL}/coagulogramas`, addCoagulograma);
+      }
+
+      if (formulaLeucocitariaExists && formulaLeucocitariaExists.data.result.length > 0) {
+        await axios.put(`${process.env.REACT_APP_BACKEND_URL}/formula-leucocitaria/${selectedProtocoloId}`, addFormulaL);
+      } else {
+        await axios.post(`${process.env.REACT_APP_BACKEND_URL}/formula-leucocitaria`, addFormulaL);
+      }
+      
+      await axios.put(`${process.env.REACT_APP_BACKEND_URL}/protocolos/${selectedProtocoloId}`, { id_estado: 3 });
+  
+      alert('Protocolo finalizado correctamente, <strong>ya no podrá editarlo</strong>');
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos`);
+      setData(response.data.result);
+      setprotocoloEstado();
+      handleCloseDialog();
+    } catch (error) {
+      console.error('Error al guardar los datos:', error);
+      alert('Error al guardar los datos');
+    }
   };
 
   const handleFiltroClick = async () => {
@@ -224,8 +368,8 @@ const TablaRegistros = () => {
     setRowsPerPage(event.target.value);
   };
 
-  const handleClick = (event, id_protocolo) => {
-    console.log(id_protocolo);
+  const handleClick = (event, id_protocolo, id_estado) => {
+    setEstado(id_estado);
     setSelectedProtocoloId(id_protocolo);
     setAnchorEl(event.currentTarget);
     setOpenMenu(true);
@@ -236,15 +380,169 @@ const TablaRegistros = () => {
     setOpenMenu(false);
   };
   
-  const handleOpenDialog = (id_protocolo) => {
-    setOpenDialog(true);
-    handleCloseMenu();
+  const handleOpenDialog = async (id_protocolo) => {
+    try {
+      const protocoloResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos/${id_protocolo}`);
+      const protocolo = protocoloResponse.data.result;
+      setEstado(protocolo.id_estado);
+      let hemogramaResponse = {};
+      let formulaLeucocitariaResponse = {};
+      let bioquimicaSanguineaResponse = {};
+      let coagulogramaResponse = {};
+      let formulaLeucocitariaFront = {};
+      let coagulogramaFront = {};
+      
+      if(estado === 3 || estado === 2){
+        hemogramaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/hemogramas/${id_protocolo}`);
+        formulaLeucocitariaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/formula-leucocitaria/${id_protocolo}`);
+        bioquimicaSanguineaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/bioquimica-sanguinea/${id_protocolo}`);
+        coagulogramaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/coagulogramas/${id_protocolo}`);
+      
+        coagulogramaFront = {
+          "tiempo-de-protrombina--t.p": coagulogramaResponse.data.result.tiempo_protrombina,
+          "tiempo-de-tromboplastina-parcial-activado---kptt":coagulogramaResponse.data.result.tiempo_tromboplastina
+        }
+
+        
+        if(formulaLeucocitariaResponse.data.result.length > 0){
+          formulaLeucocitariaResponse.data.result.forEach((item) => {
+            const tipoCelula = tipoCelulas.find(tc => tc.id_tipo === item.id_tipo_celula);
+            if (tipoCelula) {
+              const id = removeAccents(tipoCelula.tipo_celula.toLowerCase().replace(/ /g, '-'));
+              formulaLeucocitariaFront[`${id}-relativa`] = item.relativa;
+              formulaLeucocitariaFront[`${id}-absoluta`] = item.absoluta === 0? '0' : item.absoluta;
+            }
+          })
+          formulaLeucocitariaFront['observaciones'] = formulaLeucocitariaResponse.data.result[0]?.observaciones || '';
+        }else{
+          formulaLeucocitariaFront['observaciones'] = '';
+          tipoCelulas.forEach((tc) => {
+            const id = removeAccents(tc.tipo_celula.toLowerCase().replace(/ /g, '-'));
+            formulaLeucocitariaFront[`${id}-relativa`] = '';
+            formulaLeucocitariaFront[`${id}-absoluta`] = '';
+          });
+        }
+     
+        setHemogramaData({
+          "recuento-globulos-rojos": hemogramaResponse.data.result?hemogramaResponse.data.result.recuento_globulos_rojos : null,
+          "hemoglobina": hemogramaResponse.data.result? hemogramaResponse.data.result.hemoglobina : null,
+          "hematocrito": hemogramaResponse.data.result? hemogramaResponse.data.result.hematocrito : null,
+          "vcm": hemogramaResponse.data.result? hemogramaResponse.data.result.vcm : null,
+          "hcm": hemogramaResponse.data.result? hemogramaResponse.data.result.hcm : null,
+          "chcm": hemogramaResponse.data.result? hemogramaResponse.data.result.chcm : null,
+          "rdw": hemogramaResponse.data.result? hemogramaResponse.data.result.rdw : null,
+          "indice-reticulocitario": hemogramaResponse.data.result? hemogramaResponse.data.result.indice_reticulocitario : null,
+          "recuento-plaquetario": hemogramaResponse.data.result? hemogramaResponse.data.result.recuento_plaquetario : null,
+          "frotis": hemogramaResponse.data.result? hemogramaResponse.data.result.frotis : null,
+          "recuento-leucocitario": hemogramaResponse.data.result? hemogramaResponse.data.result.recuento_leucocitario : null,
+          "caracteristicas-serie-eritroide": hemogramaResponse.data.result? hemogramaResponse.data.result.caracteristicas_serie_eritroide : null,
+          "observaciones": hemogramaResponse.data.result? hemogramaResponse.data.result.observaciones : null,
+          "morfologia-plaquetaria": hemogramaResponse.data.result? hemogramaResponse.data.result.morfologia_plaquetaria : null
+        });
+
+        setFormulaLeucocitariaData(formulaLeucocitariaFront);
+
+        setBioquimicaSanguineaData({
+          "urea": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.urea : null,
+          "creatinina": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.creatinina : null,
+          "glucemia": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.glucemia : null,
+          "gpt-(alt)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.gpt : null,
+          "got-(ast)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.got : null,
+          "fosfatasa-alcalina-serica-(fas)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.fosfatasa_alcalina : null,
+          "g-glutamil-transferasa-(ggt)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.g_glutamil_transferasa : null,
+          "proteinas-totales": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.proteinas_totales : null,
+          "albumina": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.albumina : null,
+          "globulinas": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.globulinas : null,
+          "relacion-alb/glob": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.relacion_alb_glob : null,
+          "bilirrubina-total-(bt)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.bilirrubina_total : null,
+          "bilirrubina-directa-(bd)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.bilirrubina_directa : null,
+          "bilirrubina-indirecta-(bi)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.bilirrubina_indirecta : null,
+          "amilasa": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.amilasa : null,
+          "trigliceridos-(tag)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.trigliceridos : null,
+          "colesterol-total-(col)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.colesterol_total : null,
+          "creatinin-p-kinasa-(cpk)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.creatinin_p_kinasa : null,
+          "hdl-col": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.hdl_col : null,
+          "ldl-col": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.ldl_col : null,
+          "calcio-total-(ca)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.calcio_total : null,
+          "fosforo-(p)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.fosforo : null,
+          "sodio-(na)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.sodio : null,
+          "potasio-(k)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.potasio : null,
+          "cloro-(cl)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.cloro : null,
+          "observaciones": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.observaciones : null
+        });
+
+        if(coagulogramaResponse){setCoagulogramaData(coagulogramaFront)}
+          else{
+            setCoagulogramaData({
+              "tiempo-de-protrombina--t.p": null,
+              "tiempo-de-tromboplastina-parcial-activado---kptt": null
+            });
+          }
+      }else{
+        setHemogramaData({
+          "recuento-globulos-rojos": null,
+          "hemoglobina": null,
+          "hematocrito": null,
+          "vcm": null,
+          "hcm": null,
+          "chcm": null,
+          "rdw": null,
+          "indice-reticulocitario": null,
+          "recuento-plaquetario": null,
+          "frotis": null,
+          "recuento-leucocitario": null,
+          "caracteristicas-serie-eritroide": null,
+          "observaciones": null,
+          "morfologia-plaquetaria": null
+        });
+        setFormulaLeucocitariaData({
+          "observaciones": ''
+        });
+        setBioquimicaSanguineaData({
+          "urea": null,
+          "creatinina": null,
+          "glucemia": null,
+          "gpt-(alt)": null,
+          "got-(ast)": null,
+          "fosfatasa-alcalina-serica-(fas)": null,
+          "g-glutamil-transferasa-(ggt)": null,
+          "proteinas-totales": null,
+          "albumina": null,
+          "globulinas": null,
+          "relacion-alb/glob": null,
+          "bilirrubina-total-(bt)": null,
+          "bilirrubina-directa-(bd)": null,
+          "bilirrubina-indirecta-(bi)": null,
+          "amilasa": null,
+          "trigliceridos-(tag)": null,
+          "colesterol-total-(col)": null,
+          "creatinin-p-kinasa-(cpk)": null,
+          "hdl-col": null,
+          "ldl-col": null,
+          "calcio-total-(ca)": null,
+          "fosforo-(p)": null,
+          "sodio-(na)": null,
+          "potasio-(k)": null,
+          "cloro-(cl)": null,
+          "observaciones": ''
+        });
+        setCoagulogramaData({
+          "tiempo-de-protrombina--t.p": null,
+          "tiempo-de-tromboplastina-parcial-activado---kptt": null
+        });
+      }
+ 
+      setSelectedProtocoloId(id_protocolo);
+      setOpenDialog(true);
+      handleCloseMenu();
+    } catch (error) {
+      console.error('Error al cargar los datos del protocolo:', error);
+    }
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setSelectedProtocoloId(null);
-    setPendingState();
   };
 
   const handleNext = () => {
@@ -275,7 +573,10 @@ const TablaRegistros = () => {
         indice_reticulocitario: convertToNumberOrNull(hemogramaData['indice-reticulocitario']),
         recuento_plaquetario: convertToNumberOrNull(hemogramaData['recuento-plaquetario']),
         frotis: hemogramaData['frotis'] || null,
-        recuento_leucocitario: convertToNumberOrNull(hemogramaData['recuento-leucocitario'])
+        recuento_leucocitario: convertToNumberOrNull(hemogramaData['recuento-leucocitario']),
+        caracteristicas_serie_eritroide: hemogramaData['caracteristicas-serie-eritroide'] || null,
+        observaciones: hemogramaData['observaciones'] || null,
+        morfologia_plaquetaria: hemogramaData['morfologia-plaquetaria'] || null
       };
       const addBioquimica = {
         id_protocolo: selectedProtocoloId,
@@ -304,6 +605,7 @@ const TablaRegistros = () => {
         sodio: convertToNumberOrNull(bioquimicaSanguineaData['sodio-(na)']),
         potasio: convertToNumberOrNull(bioquimicaSanguineaData['potasio-(k)']),
         cloro: convertToNumberOrNull(bioquimicaSanguineaData['cloro-(cl)']),
+        observaciones: bioquimicaSanguineaData['observaciones'] || null
       };
       const addCoagulograma = {
         id_protocolo: selectedProtocoloId,
@@ -315,18 +617,55 @@ const TablaRegistros = () => {
         id_tipo_celula: tc.id_tipo,
         id_protocolo: selectedProtocoloId,
         relativa: convertToNumberOrNull(formulaLeucocitariaData[`${removeAccents(tc.tipo_celula.toLowerCase().replace(/ /g, '-'))}-relativa`]),
-        absoluta: convertToNumberOrNull(formulaLeucocitariaData[`${removeAccents(tc.tipo_celula.toLowerCase().replace(/ /g, '-'))}-absoluta`])
+        absoluta: convertToNumberOrNull(formulaLeucocitariaData[`${removeAccents(tc.tipo_celula.toLowerCase().replace(/ /g, '-'))}-absoluta`]),
+        observaciones: formulaLeucocitariaData['observaciones'] || null
       }));
 
-      // Enviar los datos al backend
-      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/hemogramas`, addHemograma);
-      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/bioquimica-sanguinea`, addBioquimica);
-      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/coagulogramas`, addCoagulograma);
-      for (const formula of addFormulaL) {
-        await axios.post(`${process.env.REACT_APP_BACKEND_URL}/formula-leucocitaria`, formula);
+      // Verificar si los datos ya existen
+      const hemogramaExists = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/hemogramas/${selectedProtocoloId}`).catch(error => {
+        if (error.response && error.response.status === 404) return null;
+        throw error;
+      });
+      const bioquimicaExists = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/bioquimica-sanguinea/${selectedProtocoloId}`).catch(error => {
+        if (error.response && error.response.status === 404) return null;
+        throw error;
+      });
+      const coagulogramaExists = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/coagulogramas/${selectedProtocoloId}`).catch(error => {
+        if (error.response && error.response.status === 404) return null;
+        throw error;
+      });
+      const formulaLeucocitariaExists = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/formula-leucocitaria/${selectedProtocoloId}`).catch(error => {
+        if (error.response && error.response.status === 404) return null;
+        throw error;
+      });
+  
+      // Actualizar o crear registros según corresponda
+      if (hemogramaExists && hemogramaExists.data.result) {
+        await axios.put(`${process.env.REACT_APP_BACKEND_URL}/hemogramas/${selectedProtocoloId}`, addHemograma);
+      } else {
+        await axios.post(`${process.env.REACT_APP_BACKEND_URL}/hemogramas`, addHemograma);
+      }
+  
+      if (bioquimicaExists && bioquimicaExists.data.result) {
+        await axios.put(`${process.env.REACT_APP_BACKEND_URL}/bioquimica-sanguinea/${selectedProtocoloId}`, addBioquimica);
+      } else {
+        await axios.post(`${process.env.REACT_APP_BACKEND_URL}/bioquimica-sanguinea`, addBioquimica);
+      }
+  
+      if (coagulogramaExists && coagulogramaExists.data.result) {
+        await axios.put(`${process.env.REACT_APP_BACKEND_URL}/coagulogramas/${selectedProtocoloId}`, addCoagulograma);
+      } else {
+        await axios.post(`${process.env.REACT_APP_BACKEND_URL}/coagulogramas`, addCoagulograma);
       }
 
-      await axios.put(`${process.env.REACT_APP_BACKEND_URL}/protocolos/${selectedProtocoloId}`, { id_estado: 3 });
+      if (formulaLeucocitariaExists && formulaLeucocitariaExists.data.result.length > 0) {
+        await axios.put(`${process.env.REACT_APP_BACKEND_URL}/formula-leucocitaria/${selectedProtocoloId}`, addFormulaL);
+      } else {
+        await axios.post(`${process.env.REACT_APP_BACKEND_URL}/formula-leucocitaria`, addFormulaL);
+      }
+      
+      setPendingState();
+      setprotocoloEstado();
 
       console.log("Datos enviados:");
       console.log("Hemograma:", addHemograma);
@@ -354,7 +693,6 @@ const TablaRegistros = () => {
   const setPendingState = async () => {
     try {
       await axios.put(`${process.env.REACT_APP_BACKEND_URL}/protocolos/${selectedProtocoloId}`, { id_estado: 2 });
-      // Actualizar la data después de cambiar el estado a "Pendiente"
       const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos`);
       setData(response.data.result);
     } catch (error) {
@@ -362,6 +700,16 @@ const TablaRegistros = () => {
     }
   };
 
+  const setprotocoloEstado = async()=>{
+    try {
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos/${selectedProtocoloId}`);
+      setEstado(response.data.result.id_estado);
+    } catch (error) {
+      console.error('Error al obtener el estado del protocolo:', error);
+      return null;
+    }
+  }
+  
   const handleHemogramaChange = (e) => {
     const id = removeAccents(e.target.id);
     setHemogramaData({ ...hemogramaData, [id]: e.target.value });
@@ -372,7 +720,15 @@ const TablaRegistros = () => {
     const field = id.split('-').slice(0, -1).join('-');
     setFormulaLeucocitariaData((prevData) => ({
       ...prevData,
-      [`${field}-${type}`]: value,
+      [`${field}-${type}`]: value
+    }));
+  };
+
+  const handleObservacionesChange = (e) => {
+    const { value } = e.target;
+    setFormulaLeucocitariaData((prevData) => ({
+      ...prevData,
+      observaciones: value,
     }));
   };
 
@@ -522,9 +878,9 @@ const TablaRegistros = () => {
         columnStyles: { 0: { fontStyle: 'bold' }, 1: { halign: 'left', cellWidth: 133.82 } }, // Centrar solo la segunda columna
         headStyles: { fillColor: [255, 255, 255], textColor: 0, fontSize: 9 },
         body: [
-          ["Características serie eritroide", "         S/p"],
-          ["Observaciones", "         S/p"],
-          ["Morfología plaquetaria", "         S/p"]
+          ["Características serie eritroide", hemograma.caracteristicas_serie_eritroide || "S/p"],
+          ["Observaciones", hemograma.observaciones || "S/p"],
+          ["Morfología plaquetaria", hemograma.morfologia_plaquetaria || "S/p"]
         ]
       });
 
@@ -575,7 +931,7 @@ const TablaRegistros = () => {
         columnStyles: { 0: { fontStyle: 'bold' }, 1: { halign: 'left', cellWidth: 140.52 } }, // Centrar solo la segunda columna
         headStyles: { fillColor: [255, 255, 255], textColor: 0, fontSize: 9 },
         body: [
-          ["Observaciones", "       S/p"], // La primera celda ocupa su espacio, y "S/p" cae en la segunda columna
+          ["Observaciones", formulaLeucocitaria[0]?.observaciones || "S/p"], 
         ]
       });
       
@@ -629,7 +985,7 @@ const TablaRegistros = () => {
         columnStyles: { 0: { fontStyle: 'bold' } , 1: { halign: 'left', cellWidth: 127.38 } }, // Centrar solo la segunda columna
         headStyles: { fillColor: [255, 255, 255], textColor: 0, fontSize: 9 },
         body: [
-          ["Observaciones", "        S/p"],
+          ["Observaciones", bioquimicaSanguinea.observaciones || "S/p"],
         ]
       });      
 
@@ -718,19 +1074,22 @@ const TablaRegistros = () => {
     handleCloseMenu();
   };
 
-  const handleOpenPaymentDialog = (id_protocolo) => {
+  const handleOpenPaymentDialog = async (id_protocolo) => {
     setSelectedProtocoloId(id_protocolo);
     setOpenPaymentDialog(true);
     handleCloseMenu();
   };
 
-  const handleClosePaymentDialog = () => {
+  const handleClosePaymentDialog = async() => {
     setOpenPaymentDialog(false);
     setPaymentData({
       importe: '',
       medioPago: '',
       observaciones: ''
     });
+    // se actualizan los campos de la tabla
+    const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos`);
+    setData(response.data.result);
   };
 
   const handleSavePayment = async () => {
@@ -753,25 +1112,29 @@ const TablaRegistros = () => {
   };
 
   const renderFormContent = (step) => {
+
+    const isDisabled = estado === 3;
     switch (step) {
       case 0:
-        return <TextFieldGroup labels={['Recuento Glóbulos Rojos', 'Hemoglobina', 'Hematocrito', 'VCM', 'HCM', 'CHCM', 'RDW', 'Índice Reticulocitario', 'Recuento Plaquetario', 'Frotis', 'Recuento Leucocitario', 'Características serie eritroide', 'Observaciones', 'Morfología plaquetaria']} data={hemogramaData} handleChange={handleHemogramaChange} fieldRefs={fieldRefs} handleKeyDown={handleKeyDown} />;
+        return <TextFieldGroup labels={['Recuento Glóbulos Rojos', 'Hemoglobina', 'Hematocrito', 'VCM', 'HCM', 'CHCM', 'RDW', 'Índice Reticulocitario', 'Recuento Plaquetario', 'Frotis', 'Recuento Leucocitario', 'Características serie eritroide', 'Observaciones', 'Morfología plaquetaria']} data={hemogramaData} handleChange={handleHemogramaChange} fieldRefs={fieldRefs} handleKeyDown={handleKeyDown} disabled={isDisabled} />;
       case 1:
         return tipoCelulas.length > 0 ? (
           <TextFieldGroupWithRelAbs 
             labels={tipoCelulas.map(tc => tc.tipo_celula)} 
             data={formulaLeucocitariaData} 
             handleChange={handleFormulaLeucocitariaChange} 
+            handleObservacionesChange={handleObservacionesChange}
             fieldRefs={fieldRefs} 
             handleKeyDown={handleKeyDown} 
+            disabled={isDisabled}
           />
         ) : (
           <p>Cargando tipos de células...</p>
         );
       case 2:
-        return <TextFieldGroup labels={['Urea', 'Creatinina', 'Glucemia', 'GPT (ALT)', 'GOT (AST)', 'Fosfatasa Alcalina Sérica (FAS)', 'g-glutamil transferasa (GGT)', 'Proteínas Totales', 'Albúmina', 'Globulinas', 'Relación Alb/Glob', 'Bilirrubina Total (BT)', 'Bilirrubina Directa (BD)', 'Bilirrubina Indirecta (BI)', 'Amilasa', 'Triglicéridos (TAG)', 'Colesterol Total (COL)', 'Creatinin-P-Kinasa (CPK)', 'HDL-Col', 'LDL-Col', 'Calcio Total (Ca)', 'Fósforo (P)', 'Sodio (Na)', 'Potasio (K)', 'Cloro (Cl)', 'Observaciones']} data={bioquimicaSanguineaData} handleChange={handleBioquimicaSanguineaChange} fieldRefs={fieldRefs} handleKeyDown={handleKeyDown} />;
+        return <TextFieldGroup labels={['Urea', 'Creatinina', 'Glucemia', 'GPT (ALT)', 'GOT (AST)', 'Fosfatasa Alcalina Sérica (FAS)', 'g-glutamil transferasa (GGT)', 'Proteínas Totales', 'Albúmina', 'Globulinas', 'Relación Alb/Glob', 'Bilirrubina Total (BT)', 'Bilirrubina Directa (BD)', 'Bilirrubina Indirecta (BI)', 'Amilasa', 'Triglicéridos (TAG)', 'Colesterol Total (COL)', 'Creatinin-P-Kinasa (CPK)', 'HDL-Col', 'LDL-Col', 'Calcio Total (Ca)', 'Fósforo (P)', 'Sodio (Na)', 'Potasio (K)', 'Cloro (Cl)', 'Observaciones']} data={bioquimicaSanguineaData} handleChange={handleBioquimicaSanguineaChange} fieldRefs={fieldRefs} handleKeyDown={handleKeyDown} disabled={isDisabled}/>;
       case 3:
-        return <TextFieldGroup labels={['Tiempo de Protrombina- T.P', 'Tiempo de tromboplastina parcial activado - KPTT']} data={coagulogramaData} handleChange={handleCoagulogramaChange} fieldRefs={fieldRefs} handleKeyDown={handleKeyDown} />;
+        return <TextFieldGroup labels={['Tiempo de Protrombina- T.P', 'Tiempo de tromboplastina parcial activado - KPTT']} data={coagulogramaData} handleChange={handleCoagulogramaChange} fieldRefs={fieldRefs} handleKeyDown={handleKeyDown} disabled={isDisabled}/>;
       default:
         return 'Unknown step';
     }
@@ -791,10 +1154,10 @@ const TablaRegistros = () => {
         borderRadius="8px"
       >
         <Box>
-          <strong>Análisis Completados:</strong> <span style={{ color: "green" }}>X</span>
+          <strong>Análisis Completados:</strong> <span style={{ color: "green" }}>{completados}</span>
         </Box>
         <Box>
-          <strong>Análisis Pendientes:</strong> <span style={{ color: "orange" }}>Y</span>
+          <strong>Análisis Pendientes:</strong> <span style={{ color: "orange" }}>{pendientes}</span>
         </Box>
       </Box>
 
@@ -897,24 +1260,33 @@ const TablaRegistros = () => {
                         {formatCurrency(row.importe)}
                     </TableCell>
                     <TableCell>
-                        <IconButton onClick={(event) => handleClick(event, row.id_protocolo)}>
+                        <IconButton onClick={(event) => handleClick(event, row.id_protocolo, row.id_estado)}>
                           <MoreVertIcon />
                         </IconButton>
                         <Menu
-                          anchorEl={anchorEl}
-                          open={openMenu}
-                          slotProps={{
-                            paper: {
-                              style: { width: 200 },
-                            },
-                          }}
-                          onClose={handleCloseMenu}
-                        >
-                          <MenuItem onClick={() => handleOpenPaymentDialog(selectedProtocoloId)}>Acreditar Pago</MenuItem>
-                          <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Editar</MenuItem>
-                          <MenuItem onClick={() => handleDownload(selectedProtocoloId)}>Descargar</MenuItem>                          
-                          <MenuItem onClick={() => handleDelete(selectedProtocoloId)}>Eliminar</MenuItem>
-                        </Menu>
+                        anchorEl={anchorEl}
+                        open={openMenu}
+                        slotProps={{
+                          paper: {
+                            style: { width: 200 },
+                          },
+                        }}
+                        onClose={handleCloseMenu}
+                      >
+                        {selectedProtocoloId && estado !== 3 && (
+                          <>
+                            <MenuItem onClick={() => handleOpenPaymentDialog(selectedProtocoloId)}>Acreditar Pago</MenuItem>
+                            <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Editar</MenuItem>
+                          </>
+                        )}
+                        {selectedProtocoloId && estado === 3 && (
+                          <>
+                          <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Ver</MenuItem>
+                          <MenuItem onClick={() => handleDownload(selectedProtocoloId)}>Descargar</MenuItem>
+                          </>
+                        )}
+                        <MenuItem onClick={() => handleDelete(selectedProtocoloId)}>Eliminar</MenuItem>
+                      </Menu>
 
                         {/* Diálogo con formulario */}
                         <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
@@ -947,11 +1319,16 @@ const TablaRegistros = () => {
                             >
                               Siguiente
                             </Button>
-                            {activeStep === steps.length - 1 && (
+                            {activeStep === steps.length - 1 && selectedProtocoloId && estado !== 3 && (
+                            <>
                               <Button onClick={handleSave} color="primary">
                                 Guardar
                               </Button>
-                            )}
+                              <Button onClick={handleFinalize} color="primary">
+                                Finalizar
+                              </Button>
+                            </>
+                          )}
                           </DialogActions>
                         </Dialog>
                     </TableCell>

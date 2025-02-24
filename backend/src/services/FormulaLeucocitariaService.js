@@ -6,22 +6,39 @@ const getAllFormulaLeucocitarias = async () => {
 };
 
 const createFormulaLeucocitaria = async (data) => {
-  return await FormulaLeucocitaria.create(data);
+  formulaLeucocitaria = await FormulaLeucocitaria.bulkCreate(data);
+  return formulaLeucocitaria;
 };
 
 const getFormulaLeucocitaria = async (id_protocolo) => {
   return await FormulaLeucocitaria.findAll({
-    where: { id_protocolo },
+    where: {
+      id_protocolo: id_protocolo
+    }
   });
 }
 
 const updateFormulaLeucocitaria = async (id_protocolo, data) => {
-  formulaLeucocitaria = await getFormulaLeucocitaria(id_protocolo);
-  if(!formulaLeucocitaria) {
-    throw new Error('Formula Leucocitaria no encontrada');
+  const formulaLeucocitarias = await getFormulaLeucocitaria(id_protocolo);
+  console.log("FORMULASl: ",formulaLeucocitarias);
+  console.log("DATA: ",data);
+  
+  if (!Array.isArray(data)) {
+    throw new Error('Los datos proporcionados no son un array');
   }
-  return await formulaLeucocitaria.update(data);
-}
+  const updatePromises = data.map(async (item) => {
+    const formulaLeucocitaria = formulaLeucocitarias.find(fl => fl.id_tipo_celula === item.id_tipo_celula);
+    if (formulaLeucocitaria) {
+      return await formulaLeucocitaria.update(item);
+    } else {
+      throw new Error('Formula Leucocitaria no encontrada');
+    }
+  });
+
+  return await Promise.all(updatePromises);
+};
+
+
 
 const deleteFormulaLeucocitaria = async (id_protocolo) => {
   formulaLeucocitaria = await getFormulaLeucocitaria(id_protocolo);

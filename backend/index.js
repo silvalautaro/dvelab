@@ -18,13 +18,13 @@ const {
   formulaLRoutes,
   bioquimicaSRoutes,
   coagulogramaRoutes, 
-  observacionRoutes,
   sexoRoutes,
   archivoRoutes,
   estadoRoutes,
   categoriaRoutes,
   precioRoutes,
-  usuarioRoutes
+  usuarioRoutes,
+  pagoRoutes
 } = require('./src/routes');
 
 
@@ -57,13 +57,16 @@ app.use('/api/tipos-celula', tipoCelulaRoutes);
 app.use('/api/formula-leucocitaria', formulaLRoutes);
 app.use('/api/bioquimica-sanguinea', bioquimicaSRoutes);
 app.use('/api/coagulogramas', coagulogramaRoutes);
-app.use('/api/observaciones', observacionRoutes);
 app.use('/api/generos', sexoRoutes);
 app.use('/api/archivos', archivoRoutes);
 app.use('/api/estados', estadoRoutes);
 app.use('/api/categorias', categoriaRoutes);
 app.use('/api/precios', precioRoutes);
 app.use('/api/usuarios', usuarioRoutes);
+app.use('/api/pagos', pagoRoutes);
+app.use('/api/status', (req, res) => {
+  res.json({ status: 'API en línea' });
+});
 
 
 const PORT =  process.env.PORT || 3001;

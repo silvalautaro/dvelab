@@ -10,13 +10,13 @@ const tipoCelulaRoutes = require('./tipoCelulaRoutes');
 const formulaLRoutes = require('./formulaLRoutes');
 const bioquimicaSRoutes = require('./bioquimicaSRoutes');
 const coagulogramaRoutes = require('./coagulogramaRoutes');
-const observacionRoutes = require('./observacionRoutes');
 const sexoRoutes = require('./sexoRoutes');
 const archivoRoutes = require('./archivoRoutes');
 const estadoRoutes = require('./estadoRoutes');
 const categoriaRoutes = require('./categoriaRoutes');
 const precioRoutes = require('./precioRoutes');
 const usuarioRoutes = require('./usuarioRoutes');
+const pagoRoutes = require('./pagoRoutes');
 
 module.exports = {
     especieRoutes,
@@ -31,11 +31,11 @@ module.exports = {
     formulaLRoutes,
     bioquimicaSRoutes,
     coagulogramaRoutes,
-    observacionRoutes,
     sexoRoutes,
     archivoRoutes,
     estadoRoutes,
     categoriaRoutes,
     precioRoutes,
-    usuarioRoutes
+    usuarioRoutes,
+    pagoRoutes
 }

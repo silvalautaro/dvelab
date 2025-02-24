@@ -11,7 +11,7 @@ const createHemograma = async (data) => {
 
 const getHemograma = async (id_protocolo) => {
   return await Hemograma.findOne({
-    where: { id_protocolo },
+    where: { id_protocolo: id_protocolo },
   });
 };
 
