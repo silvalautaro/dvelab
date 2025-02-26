@@ -460,7 +460,7 @@ const TablaRegistros = () => {
           "amilasa": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.amilasa : null,
           "trigliceridos-(tag)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.trigliceridos : null,
           "colesterol-total-(col)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.colesterol_total : null,
-          "creatinin-p-kinasa-(cpk)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.creatinin_p_kinasa : null,
+          "creatinin-p-kinasa-(cpk)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.creatinina_p_kinasa : null,
           "hdl-col": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.hdl_col : null,
           "ldl-col": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.ldl_col : null,
           "calcio-total-(ca)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.calcio_total : null,
