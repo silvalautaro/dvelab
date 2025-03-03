@@ -8,7 +8,7 @@ const LoginPage = () => {
     const navigate = useNavigate();
 
     const handleLogin = () => {
-        if (username === '123' && password === '123') {
+        if (username === 'admin' && password === 'admin') {
             localStorage.setItem('authToken', 'demo-token'); // Guarda un token
             navigate('/dashboard'); // Redirige al dashboard
         } else {

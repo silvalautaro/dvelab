@@ -7,6 +7,8 @@ import BiotechIcon from '@mui/icons-material/Biotech';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 const Sidebar = () => {
     const [openIngresos, setOpenIngresos] = useState(false);
@@ -63,6 +65,22 @@ const Sidebar = () => {
                         </ListItem>
                     </List>
                 </Collapse>
+
+                {/* Botón Cuentas Pendientes */}
+                <ListItem component={Link} to="/dashboard/cuentas/pendientes" sx={{ cursor: 'pointer' }}>
+                    <ListItemIcon sx={{ color: 'white' }}>
+                        <MonetizationOnIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Cuentas Pendientes" sx={{ color: 'white' }} />
+                </ListItem>
+
+                {/* Botón Configuración */}
+                <ListItem component={Link} to="/dashboard/configuracion" sx={{ cursor: 'pointer' }}>
+                    <ListItemIcon sx={{ color: 'white' }}>
+                        <SettingsIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Configuración" sx={{ color: 'white' }} />
+                </ListItem>
             </List>
         </Box>
     );

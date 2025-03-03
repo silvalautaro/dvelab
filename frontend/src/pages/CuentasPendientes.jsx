@@ -51,7 +51,7 @@ const estudiosMap = {
 const estadosMap = {
   1: 'Ingresado',
   2: 'Pendiente',
-  3: 'Completado'
+  3: 'Saldado'
 };
 
 const removeAccents = (str) => {
@@ -134,7 +134,7 @@ const TextFieldGroupWithRelAbs = ({ labels, data, handleChange, handleObservacio
   </div>
 );
 
-const TablaRegistros = () => {
+const CuentasPendientes = () => {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -162,6 +162,8 @@ const TablaRegistros = () => {
   const [completados, setCompletados] = useState([]);
   const [pendientes, setPendientes] = useState([]);
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [profesionales, setProfesionales] = useState([]);
+  const [profesionalSeleccionado, setProfesionalSeleccionado] = useState('');
 
   const handleOpenConfirmDialog = () => {
     setOpenConfirmDialog(true);
@@ -184,9 +186,19 @@ const TablaRegistros = () => {
       try {
         const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos`);
         setData(response.data.result);
-        const completadosCount = response.data.result.filter((item) => item.id_estado === 3).length;
-        setCompletados(completadosCount);
-        const pendientesCount = response.data.result.filter((item) => item.id_estado === 1 || item.id_estado === 2).length;
+
+        // Calcular los valores de saldados y pendientes
+        const saldadosCount = response.data.result.filter((item) => {
+          const precioEstudio = item.Estudio.Precios[0].precio;
+          return determinarEstado(item.importe, precioEstudio) === 'Saldado';
+        }).length;
+
+        const pendientesCount = response.data.result.filter((item) => {
+          const precioEstudio = item.Estudio.Precios[0].precio;
+          return determinarEstado(item.importe, precioEstudio) === 'Pendiente';
+        }).length;
+
+        setCompletados(saldadosCount);
         setPendientes(pendientesCount);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -206,7 +218,19 @@ const TablaRegistros = () => {
     fetchTipoCelulas();
   }, []);
  
-  const handleEstadoChange = (e) => {setEstado(e.target.value); console.log(e.target.value);}
+useEffect(() => {
+    const fetchProfesionales = async () => {
+      try {
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/profesionales`);
+        setProfesionales(response.data.result);
+      } catch (error) {
+        console.error('Error fetching profesionales:', error);
+      }
+    };
+
+    fetchProfesionales();
+  }, []);
+ 
   const handleNumeroProtocoloChange = (e) => {setNumeroProtocolo(e.target.value); console.log(e.target.value)};
 
   const handleFechaInicioChange = (event) => {
@@ -341,28 +365,60 @@ const TablaRegistros = () => {
     }
   };
 
+  const determinarEstado = (importe, precioEstudio) => {
+    return importe === precioEstudio ? 'Saldado' : 'Pendiente';
+  };
+  
   const handleFiltroClick = async () => {
+    console.log("Aplicando filtro con profesional (ID):", profesionalSeleccionado);
+  
     try {
       const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos/go/search`, {
         params: {
           fecha_inicio: fechaInicio,
           fecha_fin: fechaFin,
-          id_estado: estado,
-          id_protocolo: numeroProtocolo
+          id_protocolo: numeroProtocolo,
+          id_profesional: profesionalSeleccionado ? Number(profesionalSeleccionado) : null,
         }
       });
-      setData(response.data.result);
-      console.log(response.data);
+  
+      let filteredData = response.data.result;
+      console.log("Datos recibidos:", filteredData);
+  
+      // Filtrar en frontend en caso de que el backend no lo haga correctamente
+      if (profesionalSeleccionado) {
+        filteredData = filteredData.filter(item => Number(item.id_profesional) === Number(profesionalSeleccionado));
+      }
+      
+      // Filtrar por estado determinado por el importe y el precio del estudio
+      if (estado) {
+        filteredData = filteredData.filter(item => {
+          const precioEstudio = item.Estudio.Precios[0].precio;
+          const estadoCalculado = determinarEstado(item.importe, precioEstudio);
+          
+          if (estado === '3') {
+            return estadoCalculado === 'Saldado';
+          } else if (estado === '2') {
+            return estadoCalculado === 'Pendiente';
+          } else {
+            return estadoCalculado === 'Pendiente';
+          }
+        });
+      }
+  
+      setData(filteredData);
+      console.log("Datos filtrados:", filteredData);
     } catch (error) {
-      console.error('Error al obtener los datos:', error);
+      console.error("Error al obtener los datos:", error);
     }
   };
   
-  const handleLimpiarFiltros = async() => {
+  const handleLimpiarFiltros = async () => {
     setFechaInicio('');
     setFechaFin('');
     setEstado('');
     setNumeroProtocolo('');
+    setProfesionalSeleccionado('');
     try {
       const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos`);
       setData(response.data.result);
@@ -380,7 +436,6 @@ const TablaRegistros = () => {
   };
 
   const handleClick = (event, id_protocolo, id_estado) => {
-    setEstado(id_estado);
     setSelectedProtocoloId(id_protocolo);
     setAnchorEl(event.currentTarget);
     setOpenMenu(true);
@@ -395,7 +450,9 @@ const TablaRegistros = () => {
     try {
       const protocoloResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos/${id_protocolo}`);
       const protocolo = protocoloResponse.data.result;
-      setEstado(protocolo.id_estado);
+      const precioEstudio = protocolo.Estudio.Precios[0].precio;
+      const estadoCalculado = determinarEstado(protocolo.importe, precioEstudio);
+      setEstado(estadoCalculado === 'Saldado' ? '3' : '2');
       let hemogramaResponse = {};
       let formulaLeucocitariaResponse = {};
       let bioquimicaSanguineaResponse = {};
@@ -1165,73 +1222,87 @@ const TablaRegistros = () => {
         borderRadius="8px"
       >
         <Box>
-          <strong>Análisis Completados:</strong> <span style={{ color: "green" }}>{completados}</span>
+          <strong>Saldados:</strong> <span style={{ color: "green" }}>{completados}</span>
         </Box>
         <Box>
-          <strong>Análisis Pendientes:</strong> <span style={{ color: "orange" }}>{pendientes}</span>
+          <strong>Pendientes:</strong> <span style={{ color: "orange" }}>{pendientes}</span>
         </Box>
       </Box>
 
       {/* Filtros */}
       <Box display="flex" justifyContent="space-between" mb={2}>
-      <Box display="flex" gap={2}>
-        <TextField
-          label="Desde"
-          type="date"
-          InputLabelProps={{ shrink: true }}
-          value={fechaInicio}
-          onChange={handleFechaInicioChange}
-        />
-        <TextField
-          label="Hasta"
-          type="date"
-          InputLabelProps={{ shrink: true }}
-          value={fechaFin}
-          onChange={handleFechaFinChange}
-        />
-        {/* Campo de Estado */}
-        <TextField
-          select
-          label="Estado"
-          value={estado}
-          onChange={handleEstadoChange}
-          SelectProps={{
-            native: true,
-          }}
-        >
-          <option value="">
-          </option>
-          {estados.map((estado) => (
-            <option key={estado.id_estado} value={estado.id_estado}>
-              {estado.estado}
-            </option>
-          ))}
-        </TextField>
-
-        {/* Campo de N° de Protocolo */}
-        <TextField
-          label="N° de Protocolo"
-          value={numeroProtocolo}
-          onChange={handleNumeroProtocoloChange}
-        />
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleFiltroClick}
-          sx={{ backgroundColor: 'rgb(35, 35, 35)', '&:hover': { backgroundColor: 'rgb(35, 35, 35)' } }}
-        >
-          Filtrar
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleLimpiarFiltros}
-          sx={{ backgroundColor: 'rgb(35, 35, 35)', '&:hover': { backgroundColor: 'rgb(35, 35, 35)' } }}
-        >
-          Limpiar filtros
-      </Button>
-      </Box>
-    </Box>
+  <Box display="flex" gap={2}>
+    <TextField
+      label="Desde"
+      type="date"
+      InputLabelProps={{ shrink: true }}
+      value={fechaInicio}
+      onChange={handleFechaInicioChange}
+    />
+    <TextField
+      label="Hasta"
+      type="date"
+      InputLabelProps={{ shrink: true }}
+      value={fechaFin}
+      onChange={handleFechaFinChange}
+    />
+    {/* Campo de Estado */}
+    <TextField
+      select
+      label="Estado"
+      value={estado}
+      onChange={(e) => setEstado(e.target.value)}
+      SelectProps={{
+        native: true,
+      }}
+    >
+      <option value="">
+      </option>
+      <option value="3">Saldado</option>
+      <option value="2">Pendiente</option>
+    </TextField>
+    {/* Campo de Profesional */}
+    <TextField
+      select
+      label="Profesional"
+      value={profesionalSeleccionado}
+      onChange={(e) => setProfesionalSeleccionado(e.target.value)}
+      SelectProps={{
+        native: true,
+      }}
+    >
+      <option value="">
+      </option>
+      {profesionales.map((profesional) => (
+        <option key={profesional.id_profesional} value={profesional.id_profesional}>
+          {profesional.nombre}
+        </option>
+      ))}
+    </TextField>
+    {/* Campo de N° de Protocolo */}
+    <TextField
+      label="N° de Protocolo"
+      value={numeroProtocolo}
+      onChange={handleNumeroProtocoloChange}
+    />
+    <Button
+      variant="contained"
+      color="primary"
+      onClick={handleFiltroClick}
+      sx={{ backgroundColor: 'rgb(35, 35, 35)', '&:hover': { backgroundColor: 'rgb(35, 35, 35)' } }}
+    >
+      Filtrar
+    </Button>
+    <Button
+      variant="contained"
+      color="primary"
+      onClick={handleLimpiarFiltros}
+      sx={{ backgroundColor: 'rgb(35, 35, 35)', '&:hover': { backgroundColor: 'rgb(35, 35, 35)' } }}
+    >
+      Limpiar filtros
+    </Button>
+  </Box>
+</Box>
 
       {/* Tabla */}
       <TableContainer component={Paper}>
@@ -1241,125 +1312,49 @@ const TablaRegistros = () => {
               <TableCell>Estado</TableCell>
               <TableCell>Número de Protocolo</TableCell>
               <TableCell>Emisión</TableCell>
-              <TableCell>Análisis Solicitado</TableCell>
+              <TableCell>Profesional</TableCell>
               <TableCell>Importe</TableCell>
               <TableCell></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {data
-              .slice((page - 1) * rowsPerPage, page * rowsPerPage)
-              .map((row, index) => {
-                const precioEstudio = row.Estudio.Precios[0].precio;
-                const formatCurrency = (amount) => {
-                  return new Intl.NumberFormat('es-ES', {
-                    style: 'currency',
-                    currency: 'ARS',
-                  }).format(amount);
-                };
-                
-                let importeColor = '';
-                if (row.importe === precioEstudio) {
-                  importeColor = 'rgb(91, 189, 91)';
-                } else if (row.importe > 0 && row.importe < precioEstudio) {
-                  importeColor = 'rgb(248, 248, 108)'; 
-                } else if (row.importe === 0) {
-                  importeColor = 'rgb(243, 71, 71)'; 
-                }
+  {data
+    .slice((page - 1) * rowsPerPage, page * rowsPerPage)
+    .map((row, index) => {
+      const precioEstudio = row.Estudio.Precios[0].precio;
+      const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('es-ES', {
+          style: 'currency',
+          currency: 'ARS',
+        }).format(amount);
+      };
 
-                // Formatear la fecha de emisión
-                const formattedDate = new Date(row.fecha).toLocaleDateString('es-ES', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                });
+      const formatDate = (dateString) => {
+        const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+        return new Date(dateString).toLocaleDateString('es-ES', options);
+      };
 
-                return (
-                  <TableRow key={index}>
-                    <TableCell>{estadosMap[row.id_estado] || 'Desconocido'}</TableCell>
-                    <TableCell>{row.id_protocolo}</TableCell>
-                    <TableCell>{formattedDate}</TableCell>
-                    <TableCell>{estudiosMap[row.id_estudio] || 'Desconocido'}</TableCell>
-                    <TableCell style={{ backgroundColor: importeColor, textAlign: 'center', fontWeight: 'bold' }}>
-                        {formatCurrency(row.importe)}
-                    </TableCell>
-                    <TableCell>
-                        <IconButton onClick={(event) => handleClick(event, row.id_protocolo, row.id_estado)}>
-                          <MoreVertIcon />
-                        </IconButton>
-                        <Menu
-                        anchorEl={anchorEl}
-                        open={openMenu}
-                        slotProps={{
-                          paper: {
-                            style: { width: 200 },
-                          },
-                        }}
-                        onClose={handleCloseMenu}
-                      >
-                        {selectedProtocoloId && estado !== 3 && (
-                          <>
-                            <MenuItem onClick={() => handleOpenPaymentDialog(selectedProtocoloId)}>Acreditar Pago</MenuItem>
-                            <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Editar</MenuItem>
-                          </>
-                        )}
-                        {selectedProtocoloId && estado === 3 && (
-                          <>
-                          <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Ver</MenuItem>
-                          <MenuItem onClick={() => handleDownload(selectedProtocoloId)}>Descargar</MenuItem>
-                          </>
-                        )}
-                        <MenuItem onClick={() => handleDelete(selectedProtocoloId)}>Eliminar</MenuItem>
-                      </Menu>
+      const estadoCalculado = determinarEstado(row.importe, precioEstudio);
 
-                        {/* Diálogo con formulario */}
-                        <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-                          <DialogTitle>Editar Protocolo N° ({selectedProtocoloId})</DialogTitle>
-                          <DialogContent>
-                            <Stepper activeStep={activeStep}>
-                              {steps.map((label) => (
-                                <Step key={label}>
-                                  <StepLabel>{label}</StepLabel>
-                                </Step>
-                              ))}
-                            </Stepper>
-                            {renderFormContent(activeStep)}
-                          </DialogContent>
-                          <DialogActions>
-                            <Button onClick={handleCloseDialog} color="primary">
-                              Cancelar
-                            </Button>
-                            <Button
-                              disabled={activeStep === 0}
-                              onClick={handleBack}
-                              color="primary"
-                            >
-                              Atrás
-                            </Button>
-                            <Button
-                              disabled={activeStep === steps.length - 1}
-                              onClick={handleNext}
-                              color="primary"
-                            >
-                              Siguiente
-                            </Button>
-                            {activeStep === steps.length - 1 && selectedProtocoloId && estado !== 3 && (
-                            <>
-                              <Button onClick={handleSave} color="primary">
-                                Guardar
-                              </Button>
-                              <Button onClick={handleOpenConfirmDialog} color="primary">
-                                Finalizar
-                              </Button>
-                            </>
-                          )}
-                          </DialogActions>
-                        </Dialog>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-          </TableBody>
+      return (
+        <TableRow key={index}>
+          <TableCell>{estadoCalculado}</TableCell>
+          <TableCell>{row.id_protocolo}</TableCell>
+          <TableCell>{formatDate(row.fecha)}</TableCell>
+          <TableCell>{row.Profesional.nombre || 'Desconocido'}</TableCell>
+          <TableCell style={{ fontWeight: 'bold' }}>
+            {formatCurrency(row.importe)}
+          </TableCell>
+          <TableCell>
+            <IconButton onClick={(event) => handleClick(event, row.id_protocolo, row.id_estado)} style={{ visibility: 'hidden' }}>
+              <MoreVertIcon />
+            </IconButton>
+          </TableCell>
+        </TableRow>
+      );
+    })}
+</TableBody>
+
         </Table>
       </TableContainer>
 
@@ -1446,4 +1441,4 @@ const TablaRegistros = () => {
   );
 };
 
-export default TablaRegistros;
+export default CuentasPendientes;
