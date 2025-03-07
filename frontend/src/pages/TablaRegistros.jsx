@@ -134,6 +134,33 @@ const TextFieldGroupWithRelAbs = ({ labels, data, handleChange, handleObservacio
   </div>
 );
 
+const calculateVCM = (hematocrito, recuentoGlobulosRojos) => {
+  if (recuentoGlobulosRojos === 0) return null;
+  return (hematocrito / recuentoGlobulosRojos) * 10;
+};
+
+const calculateHCM = (hemoglobina, recuentoGlobulosRojos) => {
+  if (recuentoGlobulosRojos === 0) return null;
+  return (hemoglobina / recuentoGlobulosRojos) * 10;
+};
+
+const calculateCHCM = (hemoglobina, hematocrito) => {
+  if (hematocrito === 0) return null;
+  return (hemoglobina / hematocrito) * 100;
+};
+
+const calculateAbsoluta = (recuentoLeucocitario, relativa) => {
+  return recuentoLeucocitario * relativa;
+};
+
+const calculateRelacionAlbGlob = (proteinasTotales, albumina) => {
+  return proteinasTotales - albumina;
+};
+
+const calculateBilirrubinaIndirecta = (bilirrubinaTotal, bilirrubinaDirecta) => {
+  return bilirrubinaTotal - bilirrubinaDirecta;
+};
+
 const TablaRegistros = () => {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -219,7 +246,6 @@ const TablaRegistros = () => {
 
   const handleFinalize = async () => {
     try {
-
       const convertToNumberOrNull = (value) => {
         const number = parseFloat(value);
         return isNaN(number) ? null : number;
@@ -335,6 +361,7 @@ const TablaRegistros = () => {
       setData(response.data.result);
       setprotocoloEstado();
       handleCloseDialog();
+      handleCloseConfirmDialog();
     } catch (error) {
       console.error('Error al guardar los datos:', error);
       alert('Error al guardar los datos');
@@ -414,7 +441,6 @@ const TablaRegistros = () => {
           "tiempo-de-tromboplastina-parcial-activado---kptt":coagulogramaResponse.data.result.tiempo_tromboplastina
         }
 
-        
         if(formulaLeucocitariaResponse.data.result.length > 0){
           formulaLeucocitariaResponse.data.result.forEach((item) => {
             const tipoCelula = tipoCelulas.find(tc => tc.id_tipo === item.id_tipo_celula);
@@ -566,7 +592,6 @@ const TablaRegistros = () => {
 
   const handleSave = async () => {
     try {
-
       const convertToNumberOrNull = (value) => {
         const number = parseFloat(value);
         return isNaN(number) ? null : number;
@@ -577,9 +602,9 @@ const TablaRegistros = () => {
         recuento_globulos_rojos: convertToNumberOrNull(hemogramaData['recuento-globulos-rojos']),
         hemoglobina: convertToNumberOrNull(hemogramaData['hemoglobina']),
         hematocrito: convertToNumberOrNull(hemogramaData['hematocrito']),
-        vcm: convertToNumberOrNull(hemogramaData['vcm']),
-        hcm: convertToNumberOrNull(hemogramaData['hcm']),
-        chcm: convertToNumberOrNull(hemogramaData['chcm']),
+        vcm: calculateVCM(hemogramaData['hematocrito'], hemogramaData['recuento-globulos-rojos']),
+        hcm: calculateHCM(hemogramaData['hemoglobina'], hemogramaData['recuento-globulos-rojos']),
+        chcm: calculateCHCM(hemogramaData['hemoglobina'], hemogramaData['hematocrito']),
         rdw: convertToNumberOrNull(hemogramaData['rdw']),
         indice_reticulocitario: convertToNumberOrNull(hemogramaData['indice-reticulocitario']),
         recuento_plaquetario: convertToNumberOrNull(hemogramaData['recuento-plaquetario']),
@@ -589,6 +614,7 @@ const TablaRegistros = () => {
         observaciones: hemogramaData['observaciones'] || null,
         morfologia_plaquetaria: hemogramaData['morfologia-plaquetaria'] || null
       };
+
       const addBioquimica = {
         id_protocolo: selectedProtocoloId,
         urea: convertToNumberOrNull(bioquimicaSanguineaData['urea']),
@@ -601,10 +627,10 @@ const TablaRegistros = () => {
         proteinas_totales: convertToNumberOrNull(bioquimicaSanguineaData['proteinas-totales']),
         albumina: convertToNumberOrNull(bioquimicaSanguineaData['albumina']),
         globulinas: convertToNumberOrNull(bioquimicaSanguineaData['globulinas']),
-        relacion_alb_glob: convertToNumberOrNull(bioquimicaSanguineaData['relacion-alb/glob']),
+        relacion_alb_glob: calculateRelacionAlbGlob(bioquimicaSanguineaData['proteinas-totales'], bioquimicaSanguineaData['albumina']),
         bilirrubina_total: convertToNumberOrNull(bioquimicaSanguineaData['bilirrubina-total-(bt)']),
         bilirrubina_directa: convertToNumberOrNull(bioquimicaSanguineaData['bilirrubina-directa-(bd)']),
-        bilirrubina_indirecta: convertToNumberOrNull(bioquimicaSanguineaData['bilirrubina-indirecta-(bi)']),
+        bilirrubina_indirecta: calculateBilirrubinaIndirecta(bioquimicaSanguineaData['bilirrubina-total-(bt)'], bioquimicaSanguineaData['bilirrubina-directa-(bd)']),
         amilasa: convertToNumberOrNull(bioquimicaSanguineaData['amilasa']),
         trigliceridos: convertToNumberOrNull(bioquimicaSanguineaData['trigliceridos-(tag)']),
         colesterol_total: convertToNumberOrNull(bioquimicaSanguineaData['colesterol-total-(col)']),
@@ -618,6 +644,7 @@ const TablaRegistros = () => {
         cloro: convertToNumberOrNull(bioquimicaSanguineaData['cloro-(cl)']),
         observaciones: bioquimicaSanguineaData['observaciones'] || null
       };
+
       const addCoagulograma = {
         id_protocolo: selectedProtocoloId,
         tiempo_protrombina: convertToNumberOrNull(coagulogramaData['tiempo-de-protrombina--t.p']),
@@ -723,20 +750,39 @@ const TablaRegistros = () => {
   
   const handleHemogramaChange = (e) => {
     const id = removeAccents(e.target.id);
-    setHemogramaData({ ...hemogramaData, [id]: e.target.value });
+    const value = parseFloat(e.target.value);
+    const updatedData = { ...hemogramaData, [id]: value };
+  
+    if (id === 'hematocrito' || id === 'recuento-globulos-rojos' || id === 'hemoglobina') {
+      const hematocrito = updatedData['hematocrito'] || 0;
+      const recuentoGlobulosRojos = updatedData['recuento-globulos-rojos'] || 0;
+      const hemoglobina = updatedData['hemoglobina'] || 0;
+  
+      updatedData['vcm'] = calculateVCM(hematocrito, recuentoGlobulosRojos);
+      updatedData['hcm'] = calculateHCM(hemoglobina, recuentoGlobulosRojos);
+      updatedData['chcm'] = calculateCHCM(hemoglobina, hematocrito);
+    }
+  
+    setHemogramaData(updatedData);
   };
-
+  
   const handleFormulaLeucocitariaChange = (e, index, type) => {
-    const { id, value } = e.target;
-    const field = id.split('-').slice(0, -1).join('-');
-    setFormulaLeucocitariaData((prevData) => ({
-      ...prevData,
-      [`${field}-${type}`]: value
-    }));
+    const id = removeAccents(e.target.id);
+    const value = parseFloat(e.target.value);
+    const updatedData = { ...formulaLeucocitariaData, [id]: value };
+  
+    if (type === 'relativa') {
+      const recuentoLeucocitario = hemogramaData['recuento-leucocitario'] || 0;
+      const relativaId = id;
+      const absolutaId = relativaId.replace('relativa', 'absoluta');
+      updatedData[absolutaId] = calculateAbsoluta(recuentoLeucocitario, value);
+    }
+  
+    setFormulaLeucocitariaData(updatedData);
   };
-
+  
   const handleObservacionesChange = (e) => {
-    const { value } = e.target;
+    const value = e.target.value;
     setFormulaLeucocitariaData((prevData) => ({
       ...prevData,
       observaciones: value,
@@ -745,7 +791,22 @@ const TablaRegistros = () => {
 
   const handleBioquimicaSanguineaChange = (e) => {
     const id = removeAccents(e.target.id);
-    setBioquimicaSanguineaData({ ...bioquimicaSanguineaData, [id]: e.target.value });
+    const value = parseFloat(e.target.value);
+    const updatedData = { ...bioquimicaSanguineaData, [id]: value };
+  
+    if (id === 'proteinas-totales' || id === 'albumina') {
+      const proteinasTotales = updatedData['proteinas-totales'] || 0;
+      const albumina = updatedData['albumina'] || 0;
+      updatedData['relacion-alb/glob'] = calculateRelacionAlbGlob(proteinasTotales, albumina);
+    }
+  
+    if (id === 'bilirrubina-total-(bt)' || id === 'bilirrubina-directa-(bd)') {
+      const bilirrubinaTotal = updatedData['bilirrubina-total-(bt)'] || 0;
+      const bilirrubinaDirecta = updatedData['bilirrubina-directa-(bd)'] || 0;
+      updatedData['bilirrubina-indirecta-(bi)'] = calculateBilirrubinaIndirecta(bilirrubinaTotal, bilirrubinaDirecta);
+    }
+  
+    setBioquimicaSanguineaData(updatedData);
   };
 
   const handleCoagulogramaChange = (e) => {
@@ -757,16 +818,28 @@ const TablaRegistros = () => {
     try {
       // Obtener datos desde el backend
       const protocoloResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos/${id_protocolo}`);
+      console.log("ID del protocolo:", id_protocolo);
+      console.log("Respuesta del protocolo:", protocoloResponse.data);
+      console.log("ID de la veterinaria:", protocoloResponse.data.result.id_veterinaria);
       const hemogramaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/hemogramas/${id_protocolo}`);
       const formulaLeucocitariaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/formula-leucocitaria/${id_protocolo}`);
       const coagulogramaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/coagulogramas/${id_protocolo}`);
       const bioquimicaSanguineaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/bioquimica-sanguinea/${id_protocolo}`);
       const profesionalResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/profesionales/${protocoloResponse.data.result.id_profesional}`);
       const pacienteResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/pacientes/${protocoloResponse.data.result.id_paciente}`);
-    
+      
+      // Nueva solicitud para obtener los datos de la veterinaria
+      const veterinariasResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/veterinarias`);
+      console.log("Lista de veterinarias:", veterinariasResponse.data);
+
+      // Buscar la veterinaria específica por su ID
+      const id_veterinaria = protocoloResponse.data.result.id_veterinaria;
+      const veterinaria = veterinariasResponse.data.result.find(vet => vet.id_veterinaria === id_veterinaria) || { nombre: "Veterinaria no encontrada" };
+      console.log("Veterinaria encontrada:", veterinaria);
+
       const protocolo = protocoloResponse.data.result;
       const hemograma = hemogramaResponse.data.result;
-      const formulaLeucocitaria = Array.isArray(formulaLeucocitariaResponse.data.result) 
+      const formulaLeucocitaria = Array.isArray(formulaLeucocitariaResponse.data.result)
         ? formulaLeucocitariaResponse.data.result 
         : [formulaLeucocitariaResponse.data.result];
       const coagulograma = coagulogramaResponse.data.result;
@@ -1047,8 +1120,11 @@ const TablaRegistros = () => {
       doc.text(`${i}`, pageWidth - 15, doc.internal.pageSize.height - 8);
 }
     
+      // Formatear el nombre del archivo
+      const fileName = `${protocolo.id_protocolo}.${paciente.tutor}.${paciente.nombre}.${veterinaria.nombre}.pdf`;
+
       // Guardar el PDF
-      doc.save(`informe_protocolo_${id_protocolo}.pdf`);
+      doc.save(fileName);
     
     } catch (error) {
       console.error("Error al generar el PDF:", error);
@@ -1123,11 +1199,21 @@ const TablaRegistros = () => {
   };
 
   const renderFormContent = (step) => {
-
     const isDisabled = estado === 3;
     switch (step) {
       case 0:
-        return <TextFieldGroup labels={['Recuento Glóbulos Rojos', 'Hemoglobina', 'Hematocrito', 'VCM', 'HCM', 'CHCM', 'RDW', 'Índice Reticulocitario', 'Recuento Plaquetario', 'Frotis', 'Recuento Leucocitario', 'Características serie eritroide', 'Observaciones', 'Morfología plaquetaria']} data={hemogramaData} handleChange={handleHemogramaChange} fieldRefs={fieldRefs} handleKeyDown={handleKeyDown} disabled={isDisabled} />;
+        return (
+          <TextFieldGroup
+            labels={[
+              'Recuento Glóbulos Rojos', 'Hemoglobina', 'Hematocrito', 'RDW', 'Índice Reticulocitario', 'Recuento Plaquetario', 'Frotis', 'Recuento Leucocitario', 'Características serie eritroide', 'Observaciones', 'Morfología plaquetaria'
+            ]}
+            data={hemogramaData}
+            handleChange={handleHemogramaChange}
+            fieldRefs={fieldRefs}
+            handleKeyDown={handleKeyDown}
+            disabled={isDisabled}
+          />
+        );
       case 1:
         return tipoCelulas.length > 0 ? (
           <TextFieldGroupWithRelAbs 
@@ -1143,7 +1229,18 @@ const TablaRegistros = () => {
           <p>Cargando tipos de células...</p>
         );
       case 2:
-        return <TextFieldGroup labels={['Urea', 'Creatinina', 'Glucemia', 'GPT (ALT)', 'GOT (AST)', 'Fosfatasa Alcalina Sérica (FAS)', 'g-glutamil transferasa (GGT)', 'Proteínas Totales', 'Albúmina', 'Globulinas', 'Relación Alb/Glob', 'Bilirrubina Total (BT)', 'Bilirrubina Directa (BD)', 'Bilirrubina Indirecta (BI)', 'Amilasa', 'Triglicéridos (TAG)', 'Colesterol Total (COL)', 'Creatinin-P-Kinasa (CPK)', 'HDL-Col', 'LDL-Col', 'Calcio Total (Ca)', 'Fósforo (P)', 'Sodio (Na)', 'Potasio (K)', 'Cloro (Cl)', 'Observaciones']} data={bioquimicaSanguineaData} handleChange={handleBioquimicaSanguineaChange} fieldRefs={fieldRefs} handleKeyDown={handleKeyDown} disabled={isDisabled}/>;
+        return (
+          <TextFieldGroup 
+            labels={[
+              'Urea', 'Creatinina', 'Glucemia', 'GPT (ALT)', 'GOT (AST)', 'Fosfatasa Alcalina Sérica (FAS)', 'g-glutamil transferasa (GGT)', 'Proteínas Totales', 'Albúmina', 'Globulinas', 'Bilirrubina Total (BT)', 'Bilirrubina Directa (BD)', 'Amilasa', 'Triglicéridos (TAG)', 'Colesterol Total (COL)', 'Creatinin-P-Kinasa (CPK)', 'HDL-Col', 'LDL-Col', 'Calcio Total (Ca)', 'Fósforo (P)', 'Sodio (Na)', 'Potasio (K)', 'Cloro (Cl)', 'Observaciones'
+            ]} 
+            data={bioquimicaSanguineaData} 
+            handleChange={handleBioquimicaSanguineaChange} 
+            fieldRefs={fieldRefs} 
+            handleKeyDown={handleKeyDown} 
+            disabled={isDisabled}
+          />
+        );
       case 3:
         return <TextFieldGroup labels={['Tiempo de Protrombina- T.P', 'Tiempo de tromboplastina parcial activado - KPTT']} data={coagulogramaData} handleChange={handleCoagulogramaChange} fieldRefs={fieldRefs} handleKeyDown={handleKeyDown} disabled={isDisabled}/>;
       default:
@@ -1403,7 +1500,7 @@ const TablaRegistros = () => {
           >
             <MenuItem value="Efectivo">Efectivo</MenuItem>
             <MenuItem value="MercadoPago">MercadoPago</MenuItem>
-            <MenuItem value="Transferencia Bancaria">Transferencia Bancaria</MenuItem>
+            <MenuItem value="Transferencia Bancaria">Banco</MenuItem>
           </TextField>
           <TextField
             margin="dense"

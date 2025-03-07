@@ -4,40 +4,43 @@ import { Box, TextField, Button, Autocomplete } from '@mui/material';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 
 // Esquema de validación usando Yup
 const validationSchema = yup.object().shape({
     date: yup.date().required('La fecha es requerida'),
     moneySent: yup
         .number()
-        .typeError('Debe ser un número')
-        .required('El monto es requerido'),
+        .typeError('Debe ser un número'),
     protocolNumber: yup
         .string()
         .matches(/^\d+$/, 'El número de protocolo debe ser una cadena de números')
         .required('El número de protocolo es requerido'),
-    professional: yup.string().required('Seleccione o escriba un profesional'),
-    veterinary: yup.string().required('Seleccione o escriba una veterinaria'),
+    professional: yup.string(),
+    veterinary: yup.string(),
     tutor: yup
         .string()
-        .matches(/^[a-zA-Z\s]+$/, 'El tutor solo puede contener letras')
-        .required('El tutor es requerido'),
+        .matches(/^[a-zA-Z\s]+$/, 'El tutor solo puede contener letras'),
     patient: yup
         .string()
-        .matches(/^[a-zA-Z\s]+$/, 'El paciente solo puede contener letras')
-        .required('El paciente es requerido'),
-    species: yup.string().required('Seleccione una especie'),
-    breed: yup.string().required('Seleccione o escriba una raza'),
-    sex: yup.string().required('Seleccione un sexo'),
-    age: yup.number().typeError('Debe ser un número').required('La edad es requerida'),
+        .matches(/^[a-zA-Z\s]+$/, 'El paciente solo puede contener letras'),
+    species: yup.string().required('La especie es requerida'),
+    breed: yup.string(),
+    sex: yup.string(),
+    age: yup.number().typeError('Debe ser un número'),
     requestedAnalysis: yup.string().required('Seleccione un análisis solicitado'),
 });
 
 const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
+const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 const FormularioIngresos = () => {
-    const navigate = useNavigate();
     const {
         handleSubmit,
         control,
@@ -45,6 +48,9 @@ const FormularioIngresos = () => {
         reset
     } = useForm({
         resolver: yupResolver(validationSchema),
+        defaultValues: {
+            date: getTodayDate(),
+        },
     });
 
     const [isOtherVeterinaria, setIsOtherVeterinaria] = useState(false);
@@ -88,29 +94,38 @@ const FormularioIngresos = () => {
     const onSubmit = async (data) => {
         const datosParaEnviar = {
             fecha: data.date ? new Date(data.date).toISOString().split('T')[0] : '',
-            importe: data.moneySent,
+            importe: data.moneySent || 0,
             id_protocolo: data.protocolNumber,
-            profesional: data.professional ,
-            veterinaria: data.veterinary ,
-            nombre: data.patient ,
-            especie: data.species ,
-            raza: data.breed ,
-            sexo: data.sex ,
-            tutor: data.tutor || '',
+            profesional: data.professional || 43,
+            veterinaria: data.veterinary || 32,
+            nombre: data.patient || 'S/E',
+            especie: data.species,
+            raza: data.breed || 12,
+            sexo: data.sex || 3,
+            tutor: data.tutor || 'S/E',
             edad: data.age || 0,
             nuevoVeterinaria: data.nuevoVeterinaria || '',
-            estudio: data.requestedAnalysis ,
+            estudio: data.requestedAnalysis,
         };
-        
+
+        console.log('Datos para enviar:', datosParaEnviar);
+
         try {
             const response = await axios.post(`${backendUrl}/protocolos`, datosParaEnviar);
             alert('Datos enviados correctamente');
             console.log('Respuesta del servidor:', response.data);
             reset();
-            navigate('/dashboard/informes/tabla')
-            
         } catch (error) {
             console.error('Error al enviar los datos:', error);
+            if (error.response) {
+                console.error('Error data:', error.response.data);
+                console.error('Error status:', error.response.status);
+                console.error('Error headers:', error.response.headers);
+            } else if (error.request) {
+                console.error('Error request:', error.request);
+            } else {
+                console.error('Error message:', error.message);
+            }
         }
     };
 
@@ -132,20 +147,6 @@ const FormularioIngresos = () => {
             }}
         >
             <Controller
-                name="protocolNumber"
-                control={control}
-                render={({ field }) => (
-                    <TextField
-                        {...field}
-                        label="Número de Protocolo"
-                        error={!!errors.protocolNumber}
-                        helperText={errors.protocolNumber?.message}
-                        fullWidth
-                    />
-                )}
-            />
-
-            <Controller
                 name="date"
                 control={control}
                 render={({ field }) => (
@@ -156,6 +157,20 @@ const FormularioIngresos = () => {
                         InputLabelProps={{ shrink: true }}
                         error={!!errors.date}
                         helperText={errors.date?.message}
+                        fullWidth
+                    />
+                )}
+            />
+
+            <Controller
+                name="protocolNumber"
+                control={control}
+                render={({ field }) => (
+                    <TextField
+                        {...field}
+                        label="Número de Protocolo"
+                        error={!!errors.protocolNumber}
+                        helperText={errors.protocolNumber?.message}
                         fullWidth
                     />
                 )}
@@ -203,10 +218,10 @@ const FormularioIngresos = () => {
                 render={({ field }) => (
                     <Autocomplete
                         {...field}
-                        options={[...options.veterinaries, 'Otro']}
-                        getOptionLabel={(option) => option.nombre || option}
+                        options={[...options.veterinaries, { id_veterinaria: 'Otro', nombre: 'Otro' }]} // Asegura que "Otro" es un objeto
+                        getOptionLabel={(option) => (typeof option === 'string' ? option : option.nombre)}
                         onChange={(_, value) => {
-                            if (value === 'Otro') {
+                            if (value?.id_veterinaria === 'Otro') {
                                 setIsOtherVeterinaria(true);
                                 field.onChange('');
                             } else {
@@ -225,6 +240,7 @@ const FormularioIngresos = () => {
                     />
                 )}
             />
+
 
             {isOtherVeterinaria && (
                 <Controller
@@ -271,27 +287,6 @@ const FormularioIngresos = () => {
             />
 
             <Controller
-                name="breed"
-                control={control}
-                render={({ field }) => (
-                    <Autocomplete
-                        {...field}
-                        options={options.breeds}
-                        getOptionLabel={(option) => option.nombre || ''}
-                        onChange={(_, value) => field.onChange(value.id_raza || '')}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Raza"
-                                error={!!errors.breed}
-                                helperText={errors.breed?.message}
-                            />
-                        )}
-                    />
-                )}
-            />
-
-            <Controller
                 name="species"
                 control={control}
                 render={({ field }) => (
@@ -306,6 +301,27 @@ const FormularioIngresos = () => {
                                 label="Especie"
                                 error={!!errors.species}
                                 helperText={errors.species?.message}
+                            />
+                        )}
+                    />
+                )}
+            />
+
+            <Controller
+                name="breed"
+                control={control}
+                render={({ field }) => (
+                    <Autocomplete
+                        {...field}
+                        options={options.breeds}
+                        getOptionLabel={(option) => option.nombre || ''}
+                        onChange={(_, value) => field.onChange(value.id_raza || '')}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Raza"
+                                error={!!errors.breed}
+                                helperText={errors.breed?.message}
                             />
                         )}
                     />
