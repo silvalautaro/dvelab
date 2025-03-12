@@ -31,7 +31,7 @@ import logoUrl from '../assets/logo.png';
 import firmaUrl from '../assets/firma.png';
 import axios from 'axios';
 
-const steps = ['HEMOGRAMA', 'Formula Leucocitaria', 'BIOQUIMICA SANGUINEA', 'Coagulograma'];
+const steps = ['Hemograma', 'Fórmula Leucocitaria', 'Bioquimica Sanguinea', 'Coagulograma'];
 
 const estudiosMap = {
   1: 'Perfil General Básico',
@@ -161,6 +161,129 @@ const calculateBilirrubinaIndirecta = (bilirrubinaTotal, bilirrubinaDirecta) => 
   return bilirrubinaTotal - bilirrubinaDirecta;
 };
 
+const Encabezado = ({ data, handleChange, errors, profesionales, veterinarias, especies, razas, sexos }) => (
+  <Box>
+    <TextField
+      label="Dinero remitido"
+      type="number"
+      value={data.moneySent || 0}
+      onChange={(e) => handleChange('moneySent', e.target.value)}
+      error={!!errors.moneySent}
+      helperText={errors.moneySent?.message}
+      fullWidth
+      margin="normal"
+    />
+    <TextField
+      select
+      label="Profesional"
+      value={data.professional || 'S/E'}
+      onChange={(e) => handleChange('professional', e.target.value)}
+      error={!!errors.professional}
+      helperText={errors.professional?.message}
+      fullWidth
+      margin="normal"
+    >
+      {profesionales.map((profesional) => (
+        <MenuItem key={profesional.id_profesional} value={profesional.id_profesional}>
+          {profesional.nombre}
+        </MenuItem>
+      ))}
+    </TextField>
+    <TextField
+      select
+      label="Veterinaria"
+      value={data.veterinary || 'S/E'}
+      onChange={(e) => handleChange('veterinary', e.target.value)}
+      error={!!errors.veterinary}
+      helperText={errors.veterinary?.message}
+      fullWidth
+      margin="normal"
+    >
+      {veterinarias.map((veterinaria) => (
+        <MenuItem key={veterinaria.id_veterinaria} value={veterinaria.id_veterinaria}>
+          {veterinaria.nombre}
+        </MenuItem>
+      ))}
+    </TextField>
+    <TextField
+      label="Tutor"
+      value={data.tutor || 'S/E'}
+      onChange={(e) => handleChange('tutor', e.target.value)}
+      error={!!errors.tutor}
+      helperText={errors.tutor?.message}
+      fullWidth
+      margin="normal"
+    />
+    <TextField
+      label="Paciente"
+      value={data.patient || 'S/E'}
+      onChange={(e) => handleChange('patient', e.target.value)}
+      error={!!errors.patient}
+      helperText={errors.patient?.message}
+      fullWidth
+      margin="normal"
+    />
+    <TextField
+      select
+      label="Especie"
+      value={data.species || 'S/E'}
+      onChange={(e) => handleChange('species', e.target.value)}
+      error={!!errors.species}
+      helperText={errors.species?.message}
+      fullWidth
+      margin="normal"
+    >
+      {especies.map((especie) => (
+        <MenuItem key={especie.id_especie} value={especie.id_especie}>
+          {especie.tipo}
+        </MenuItem>
+      ))}
+    </TextField>
+    <TextField
+      select
+      label="Raza"
+      value={data.breed || 'S/E'}
+      onChange={(e) => handleChange('breed', e.target.value)}
+      error={!!errors.breed}
+      helperText={errors.breed?.message}
+      fullWidth
+      margin="normal"
+    >
+      {razas.map((raza) => (
+        <MenuItem key={raza.id_raza} value={raza.id_raza}>
+          {raza.nombre}
+        </MenuItem>
+      ))}
+    </TextField>
+    <TextField
+      select
+      label="Sexo"
+      value={data.sex || 'S/E'}
+      onChange={(e) => handleChange('sex', e.target.value)}
+      error={!!errors.sex}
+      helperText={errors.sex?.message}
+      fullWidth
+      margin="normal"
+    >
+      {sexos.map((sexo) => (
+        <MenuItem key={sexo.id_sexo} value={sexo.id_sexo}>
+          {sexo.sexo}
+        </MenuItem>
+      ))}
+    </TextField>
+    <TextField
+      label="Edad"
+      type="number"
+      value={data.age || 0}
+      onChange={(e) => handleChange('age', e.target.value)}
+      error={!!errors.age}
+      helperText={errors.age?.message}
+      fullWidth
+      margin="normal"
+    />
+  </Box>
+);
+
 const TablaRegistros = () => {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -189,6 +312,51 @@ const TablaRegistros = () => {
   const [completados, setCompletados] = useState([]);
   const [pendientes, setPendientes] = useState([]);
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [encabezadoData, setEncabezadoData] = useState({
+    date: '',
+    protocolNumber: '',
+    moneySent: 0,
+    professional: 'S/E',
+    veterinary: 'S/E',
+    tutor: 'S/E',
+    patient: 'S/E',
+    species: 'S/E',
+    breed: 'S/E',
+    sex: 'S/E',
+    age: 0,
+  });
+  const [openEncabezadoDialog, setOpenEncabezadoDialog] = useState(false);
+  const [profesionales, setProfesionales] = useState([]);
+  const [veterinarias, setVeterinarias] = useState([]);
+  const [especies, setEspecies] = useState([]);
+  const [razas, setRazas] = useState([]);
+  const [sexos, setSexos] = useState([]);
+  const [pacientes, setPacientes] = useState([]);
+
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const [profesionalesResponse, veterinariasResponse, especiesResponse, razasResponse, sexosResponse] = await Promise.all([
+          axios.get(`${process.env.REACT_APP_BACKEND_URL}/profesionales`),
+          axios.get(`${process.env.REACT_APP_BACKEND_URL}/veterinarias`),
+          axios.get(`${process.env.REACT_APP_BACKEND_URL}/especies`),
+          axios.get(`${process.env.REACT_APP_BACKEND_URL}/razas`),
+          axios.get(`${process.env.REACT_APP_BACKEND_URL}/generos`)
+        ]);
+
+        setProfesionales(profesionalesResponse.data.result);
+        setVeterinarias(veterinariasResponse.data.result);
+        setEspecies(especiesResponse.data.result);
+        setRazas(razasResponse.data.result);
+        setSexos(sexosResponse.data.result);
+      } catch (error) {
+        console.error('Error fetching options:', error);
+      }
+    };
+
+    fetchOptions();
+  }, []);
 
   const handleOpenConfirmDialog = () => {
     setOpenConfirmDialog(true);
@@ -197,6 +365,121 @@ const TablaRegistros = () => {
   const handleCloseConfirmDialog = () => {
     setOpenConfirmDialog(false);
   };
+
+  const handleEncabezadoChange = (field, value) => {
+    console.log(`Campo actualizado: ${field}, Nuevo valor: ${value}`);
+    setEncabezadoData((prevData) => ({
+      ...prevData,
+      [field]: value,
+    }));
+  };
+
+// Función para abrir el diálogo de edición del encabezado
+const handleOpenEncabezadoDialog = async () => {
+  try {
+    const protocoloResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos/${selectedProtocoloId}`);
+    const protocolo = protocoloResponse.data.result;
+
+    // Obtener datos del paciente
+    const pacienteResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/pacientes/${protocolo.id_paciente}`);
+    const paciente = pacienteResponse.data.result;
+
+    console.log('Datos del protocolo:', protocolo);
+    console.log('Datos del paciente:', paciente);
+
+    // Convertir la fecha a formato local
+    const localDate = new Date(protocolo.fecha).toISOString().split('T')[0]; // Formato 'YYYY-MM-DD'
+
+    setEncabezadoData({
+      date: localDate || '',
+      protocolNumber: protocolo.id_protocolo || '',
+      moneySent: protocolo.importe || 0,
+      professional: protocolo.id_profesional || 'S/E',
+      veterinary: protocolo.id_veterinaria || 'S/E',
+      tutor: paciente.tutor || 'S/E',
+      patient: paciente.nombre || 'S/E',
+      species: paciente.id_especie || 'S/E',
+      breed: paciente.id_raza || 'S/E',
+      sex: paciente.id_sexo || 'S/E',
+      age: paciente.edad || 0,
+    });
+
+    setOpenEncabezadoDialog(true);
+    handleCloseMenu();
+  } catch (error) {
+    console.error('Error al cargar los datos del protocolo:', error);
+  }
+};
+
+// Función para guardar el encabezado
+const handleSaveEncabezado = async () => {
+  try {
+    // Ajustar la fecha para compensar la zona horaria
+    const date = new Date(`${encabezadoData.date}T00:00:00`);
+    const formattedDate = date.toISOString().split('T')[0];
+
+    // Preparar los datos del protocolo para enviar al backend
+    const updatedProtocolo = {
+      fecha: formattedDate, // Usar la fecha ajustada
+      id_protocolo: encabezadoData.protocolNumber, // Asegúrate de que este campo esté correctamente vinculado
+      importe: encabezadoData.moneySent,
+      id_profesional: encabezadoData.professional,
+      id_veterinaria: encabezadoData.veterinary,
+    };
+
+    // Preparar los datos del paciente para enviar al backend
+    const updatedPaciente = {
+      tutor: encabezadoData.tutor,
+      nombre: encabezadoData.patient,
+      id_especie: encabezadoData.species,
+      id_raza: encabezadoData.breed,
+      id_sexo: encabezadoData.sex,
+      edad: encabezadoData.age,
+    };
+
+    console.log('Datos del protocolo a enviar al backend:', updatedProtocolo);
+    console.log('Datos del paciente a enviar al backend:', updatedPaciente);
+
+    // Actualizar datos del protocolo en el backend
+    const protocoloResponse = await axios.put(
+      `${process.env.REACT_APP_BACKEND_URL}/protocolos/${selectedProtocoloId}`,
+      updatedProtocolo
+    );
+    console.log('Respuesta del backend al actualizar el protocolo:', protocoloResponse.data);
+
+    // Obtener el id_paciente del protocolo existente
+    const id_paciente = data.find(
+      (protocolo) => protocolo.id_protocolo === selectedProtocoloId
+    )?.id_paciente;
+
+    if (!id_paciente) {
+      throw new Error('id_paciente no está definido. No se puede actualizar el paciente.');
+    }
+
+    // Actualizar datos del paciente en el backend
+    const pacienteResponse = await axios.put(
+      `${process.env.REACT_APP_BACKEND_URL}/pacientes/${id_paciente}`,
+      updatedPaciente
+    );
+    console.log('Respuesta del backend al actualizar el paciente:', pacienteResponse.data);
+
+    // Notificar al usuario que la operación fue exitosa
+    alert('Encabezado actualizado correctamente');
+    handleCloseEncabezadoDialog();
+
+    // Actualizar los datos en el frontend
+    const updatedResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos`);
+    setData(updatedResponse.data.result);
+    console.log('Datos actualizados en el frontend:', updatedResponse.data.result);
+  } catch (error) {
+    console.error('Error al actualizar el encabezado:', error);
+    alert(`Error al actualizar el encabezado: ${error.message}`);
+  }
+};
+
+const handleCloseEncabezadoDialog = () => {
+  setOpenEncabezadoDialog(false);
+};
 
   useEffect(() => {
     const fetchEstados = async () => {
@@ -232,7 +515,7 @@ const TablaRegistros = () => {
     fetchEstados();
     fetchTipoCelulas();
   }, []);
- 
+
   const handleEstadoChange = (e) => {setEstado(e.target.value); console.log(e.target.value);}
   const handleNumeroProtocoloChange = (e) => {setNumeroProtocolo(e.target.value); console.log(e.target.value)};
 
@@ -422,153 +705,39 @@ const TablaRegistros = () => {
     try {
       const protocoloResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos/${id_protocolo}`);
       const protocolo = protocoloResponse.data.result;
-      setEstado(protocolo.id_estado);
-      let hemogramaResponse = {};
-      let formulaLeucocitariaResponse = {};
-      let bioquimicaSanguineaResponse = {};
-      let coagulogramaResponse = {};
-      let formulaLeucocitariaFront = {};
-      let coagulogramaFront = {};
-      
-      if(estado === 3 || estado === 2){
-        hemogramaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/hemogramas/${id_protocolo}`);
-        formulaLeucocitariaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/formula-leucocitaria/${id_protocolo}`);
-        bioquimicaSanguineaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/bioquimica-sanguinea/${id_protocolo}`);
-        coagulogramaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/coagulogramas/${id_protocolo}`);
-      
-        coagulogramaFront = {
-          "tiempo-de-protrombina--t.p": coagulogramaResponse.data.result.tiempo_protrombina,
-          "tiempo-de-tromboplastina-parcial-activado---kptt":coagulogramaResponse.data.result.tiempo_tromboplastina
-        }
 
-        if(formulaLeucocitariaResponse.data.result.length > 0){
-          formulaLeucocitariaResponse.data.result.forEach((item) => {
-            const tipoCelula = tipoCelulas.find(tc => tc.id_tipo === item.id_tipo_celula);
-            if (tipoCelula) {
-              const id = removeAccents(tipoCelula.tipo_celula.toLowerCase().replace(/ /g, '-'));
-              formulaLeucocitariaFront[`${id}-relativa`] = item.relativa;
-              formulaLeucocitariaFront[`${id}-absoluta`] = item.absoluta === 0? '0' : item.absoluta;
-            }
-          })
-          formulaLeucocitariaFront['observaciones'] = formulaLeucocitariaResponse.data.result[0]?.observaciones || '';
-        }else{
-          formulaLeucocitariaFront['observaciones'] = '';
-          tipoCelulas.forEach((tc) => {
-            const id = removeAccents(tc.tipo_celula.toLowerCase().replace(/ /g, '-'));
-            formulaLeucocitariaFront[`${id}-relativa`] = '';
-            formulaLeucocitariaFront[`${id}-absoluta`] = '';
-          });
-        }
-     
-        setHemogramaData({
-          "recuento-globulos-rojos": hemogramaResponse.data.result?hemogramaResponse.data.result.recuento_globulos_rojos : null,
-          "hemoglobina": hemogramaResponse.data.result? hemogramaResponse.data.result.hemoglobina : null,
-          "hematocrito": hemogramaResponse.data.result? hemogramaResponse.data.result.hematocrito : null,
-          "vcm": hemogramaResponse.data.result? hemogramaResponse.data.result.vcm : null,
-          "hcm": hemogramaResponse.data.result? hemogramaResponse.data.result.hcm : null,
-          "chcm": hemogramaResponse.data.result? hemogramaResponse.data.result.chcm : null,
-          "rdw": hemogramaResponse.data.result? hemogramaResponse.data.result.rdw : null,
-          "indice-reticulocitario": hemogramaResponse.data.result? hemogramaResponse.data.result.indice_reticulocitario : null,
-          "recuento-plaquetario": hemogramaResponse.data.result? hemogramaResponse.data.result.recuento_plaquetario : null,
-          "frotis": hemogramaResponse.data.result? hemogramaResponse.data.result.frotis : null,
-          "recuento-leucocitario": hemogramaResponse.data.result? hemogramaResponse.data.result.recuento_leucocitario : null,
-          "caracteristicas-serie-eritroide": hemogramaResponse.data.result? hemogramaResponse.data.result.caracteristicas_serie_eritroide : null,
-          "observaciones": hemogramaResponse.data.result? hemogramaResponse.data.result.observaciones : null,
-          "morfologia-plaquetaria": hemogramaResponse.data.result? hemogramaResponse.data.result.morfologia_plaquetaria : null
-        });
+      setEncabezadoData({
+        date: protocolo.fecha || '',
+        protocolNumber: protocolo.id_protocolo || '',
+        moneySent: protocolo.importe || 0,
+        professional: protocolo.id_profesional || 'S/E',
+        veterinary: protocolo.id_veterinaria || 'S/E',
+        tutor: protocolo.tutor || 'S/E',
+        patient: protocolo.nombre || 'S/E',
+        species: protocolo.id_especie || 'S/E',
+        breed: protocolo.id_raza || 'S/E',
+        sex: protocolo.id_sexo || 'S/E',
+        age: protocolo.edad || 0,
+      });
 
-        setFormulaLeucocitariaData(formulaLeucocitariaFront);
+      // Cargar datos adicionales según el estado del protocolo
+      if (estado === 3 || estado === 2) {
+        const hemogramaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/hemogramas/${id_protocolo}`);
+        const formulaLeucocitariaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/formula-leucocitaria/${id_protocolo}`);
+        const bioquimicaSanguineaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/bioquimica-sanguinea/${id_protocolo}`);
+        const coagulogramaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/coagulogramas/${id_protocolo}`);
 
-        setBioquimicaSanguineaData({
-          "urea": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.urea : null,
-          "creatinina": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.creatinina : null,
-          "glucemia": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.glucemia : null,
-          "gpt-(alt)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.gpt : null,
-          "got-(ast)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.got : null,
-          "fosfatasa-alcalina-serica-(fas)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.fosfatasa_alcalina : null,
-          "g-glutamil-transferasa-(ggt)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.g_glutamil_transferasa : null,
-          "proteinas-totales": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.proteinas_totales : null,
-          "albumina": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.albumina : null,
-          "globulinas": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.globulinas : null,
-          "relacion-alb/glob": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.relacion_alb_glob : null,
-          "bilirrubina-total-(bt)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.bilirrubina_total : null,
-          "bilirrubina-directa-(bd)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.bilirrubina_directa : null,
-          "bilirrubina-indirecta-(bi)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.bilirrubina_indirecta : null,
-          "amilasa": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.amilasa : null,
-          "trigliceridos-(tag)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.trigliceridos : null,
-          "colesterol-total-(col)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.colesterol_total : null,
-          "creatinin-p-kinasa-(cpk)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.creatinina_p_kinasa : null,
-          "hdl-col": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.hdl_col : null,
-          "ldl-col": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.ldl_col : null,
-          "calcio-total-(ca)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.calcio_total : null,
-          "fosforo-(p)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.fosforo : null,
-          "sodio-(na)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.sodio : null,
-          "potasio-(k)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.potasio : null,
-          "cloro-(cl)": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.cloro : null,
-          "observaciones": bioquimicaSanguineaResponse.data.result?bioquimicaSanguineaResponse.data.result.observaciones : null
-        });
-
-        if(coagulogramaResponse){setCoagulogramaData(coagulogramaFront)}
-          else{
-            setCoagulogramaData({
-              "tiempo-de-protrombina--t.p": null,
-              "tiempo-de-tromboplastina-parcial-activado---kptt": null
-            });
-          }
-      }else{
-        setHemogramaData({
-          "recuento-globulos-rojos": null,
-          "hemoglobina": null,
-          "hematocrito": null,
-          "vcm": null,
-          "hcm": null,
-          "chcm": null,
-          "rdw": null,
-          "indice-reticulocitario": null,
-          "recuento-plaquetario": null,
-          "frotis": null,
-          "recuento-leucocitario": null,
-          "caracteristicas-serie-eritroide": null,
-          "observaciones": null,
-          "morfologia-plaquetaria": null
-        });
-        setFormulaLeucocitariaData({
-          "observaciones": ''
-        });
-        setBioquimicaSanguineaData({
-          "urea": null,
-          "creatinina": null,
-          "glucemia": null,
-          "gpt-(alt)": null,
-          "got-(ast)": null,
-          "fosfatasa-alcalina-serica-(fas)": null,
-          "g-glutamil-transferasa-(ggt)": null,
-          "proteinas-totales": null,
-          "albumina": null,
-          "globulinas": null,
-          "relacion-alb/glob": null,
-          "bilirrubina-total-(bt)": null,
-          "bilirrubina-directa-(bd)": null,
-          "bilirrubina-indirecta-(bi)": null,
-          "amilasa": null,
-          "trigliceridos-(tag)": null,
-          "colesterol-total-(col)": null,
-          "creatinin-p-kinasa-(cpk)": null,
-          "hdl-col": null,
-          "ldl-col": null,
-          "calcio-total-(ca)": null,
-          "fosforo-(p)": null,
-          "sodio-(na)": null,
-          "potasio-(k)": null,
-          "cloro-(cl)": null,
-          "observaciones": ''
-        });
-        setCoagulogramaData({
-          "tiempo-de-protrombina--t.p": null,
-          "tiempo-de-tromboplastina-parcial-activado---kptt": null
-        });
+        setHemogramaData(hemogramaResponse.data.result || {});
+        setFormulaLeucocitariaData(formulaLeucocitariaResponse.data.result || {});
+        setBioquimicaSanguineaData(bioquimicaSanguineaResponse.data.result || {});
+        setCoagulogramaData(coagulogramaResponse.data.result || {});
+      } else {
+        setHemogramaData({});
+        setFormulaLeucocitariaData({});
+        setBioquimicaSanguineaData({});
+        setCoagulogramaData({});
       }
- 
+
       setSelectedProtocoloId(id_protocolo);
       setOpenDialog(true);
       handleCloseMenu();
@@ -858,7 +1027,7 @@ const TablaRegistros = () => {
 
       const sexosResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/generos`);
       const sexoEncontrado = sexosResponse.data.result.find(s => s.id_sexo === paciente.id_sexo);
-      const sexo = sexoEncontrado ? sexoEncontrado.sexo : "No disponible";
+      const sexo = sexoEncontrado ? sexo.sexo : "No disponible";
 
       const estudioResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/estudios/${protocolo.id_estudio}`);
 
@@ -1232,105 +1401,92 @@ const TablaRegistros = () => {
         return (
           <TextFieldGroup 
             labels={[
-              'Urea', 'Creatinina', 'Glucemia', 'GPT (ALT)', 'GOT (AST)', 'Fosfatasa Alcalina Sérica (FAS)', 'g-glutamil transferasa (GGT)', 'Proteínas Totales', 'Albúmina', 'Globulinas', 'Bilirrubina Total (BT)', 'Bilirrubina Directa (BD)', 'Amilasa', 'Triglicéridos (TAG)', 'Colesterol Total (COL)', 'Creatinin-P-Kinasa (CPK)', 'HDL-Col', 'LDL-Col', 'Calcio Total (Ca)', 'Fósforo (P)', 'Sodio (Na)', 'Potasio (K)', 'Cloro (Cl)', 'Observaciones'
-            ]} 
-            data={bioquimicaSanguineaData} 
-            handleChange={handleBioquimicaSanguineaChange} 
-            fieldRefs={fieldRefs} 
-            handleKeyDown={handleKeyDown} 
+              'Urea', 'Creatinina', 'Glucemia', 'GPT (ALT)', 'GOT (AST)', 'Fosfatasa Alcalina Sérica (FAS)', 'g-glutamil transferasa (GGT)', 'Proteínas Totales', 'Albúmina', 'Globulinas', 'Relación Alb/Glob', 'Bilirrubina Total (BT)', 'Bilirrubina Directa (BD)', 'Bilirrubina Indirecta (BI)', 'Amilasa', 'Triglicéridos (TAG)', 'Colesterol Total (COL)', 'Creatinin-P-Kinasa (CPK)', 'HDL-Col', 'LDL-Col', 'Calcio Total (Ca)', 'Fósforo (P)', 'Sodio (Na)', 'Potasio (K)', 'Cloro (Cl)'
+            ]}
+            data={bioquimicaSanguineaData}
+            handleChange={handleBioquimicaSanguineaChange}
+            fieldRefs={fieldRefs}
+            handleKeyDown={handleKeyDown}
             disabled={isDisabled}
           />
         );
       case 3:
-        return <TextFieldGroup labels={['Tiempo de Protrombina- T.P', 'Tiempo de tromboplastina parcial activado - KPTT']} data={coagulogramaData} handleChange={handleCoagulogramaChange} fieldRefs={fieldRefs} handleKeyDown={handleKeyDown} disabled={isDisabled}/>;
+        return (
+          <TextFieldGroup 
+            labels={[
+              'Tiempo de Protrombina', 'Tiempo de Tromboplastina Parcial'
+            ]}
+            data={coagulogramaData}
+            handleChange={handleCoagulogramaChange}
+            fieldRefs={fieldRefs}
+            handleKeyDown={handleKeyDown}
+            disabled={isDisabled}
+          />
+        );
       default:
-        return 'Unknown step';
+        return null;
     }
   };
 
-  const totalPages = Math.ceil(data.length / rowsPerPage);
-
   return (
-    <Box p={3}>
-      {/* Encabezado con Totales */}
-      <Box
-        display="flex"
-        justifyContent="space-evenly"
-        mb={2}
-        p={2}
-        bgcolor="#f5f5f5"
-        borderRadius="8px"
-      >
-        <Box>
-          <strong>Análisis Completados:</strong> <span style={{ color: "green" }}>{completados}</span>
-        </Box>
-        <Box>
-          <strong>Análisis Pendientes:</strong> <span style={{ color: "orange" }}>{pendientes}</span>
-        </Box>
-      </Box>
-
-      {/* Filtros */}
+    <Box>
       <Box display="flex" justifyContent="space-between" mb={2}>
-      <Box display="flex" gap={2}>
-        <TextField
-          label="Desde"
-          type="date"
-          InputLabelProps={{ shrink: true }}
-          value={fechaInicio}
-          onChange={handleFechaInicioChange}
-        />
-        <TextField
-          label="Hasta"
-          type="date"
-          InputLabelProps={{ shrink: true }}
-          value={fechaFin}
-          onChange={handleFechaFinChange}
-        />
-        {/* Campo de Estado */}
-        <TextField
-          select
-          label="Estado"
-          value={estado}
-          onChange={handleEstadoChange}
-          SelectProps={{
-            native: true,
-          }}
-        >
-          <option value="">
-          </option>
-          {estados.map((estado) => (
-            <option key={estado.id_estado} value={estado.id_estado}>
-              {estado.estado}
+        <Box display="flex" gap={2}>
+          <TextField
+            label="Desde"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            value={fechaInicio}
+            onChange={handleFechaInicioChange}
+          />
+          <TextField
+            label="Hasta"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            value={fechaFin}
+            onChange={handleFechaFinChange}
+          />
+          <TextField
+            select
+            label="Estado"
+            value={estado}
+            onChange={handleEstadoChange}
+            SelectProps={{
+              native: true,
+            }}
+          >
+            <option value="">
             </option>
-          ))}
-        </TextField>
-
-        {/* Campo de N° de Protocolo */}
-        <TextField
-          label="N° de Protocolo"
-          value={numeroProtocolo}
-          onChange={handleNumeroProtocoloChange}
-        />
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleFiltroClick}
-          sx={{ backgroundColor: 'rgb(35, 35, 35)', '&:hover': { backgroundColor: 'rgb(35, 35, 35)' } }}
-        >
-          Filtrar
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleLimpiarFiltros}
-          sx={{ backgroundColor: 'rgb(35, 35, 35)', '&:hover': { backgroundColor: 'rgb(35, 35, 35)' } }}
-        >
-          Limpiar filtros
-      </Button>
+            {estados.map((estado) => (
+              <option key={estado.id_estado} value={estado.id_estado}>
+                {estado.estado}
+              </option>
+            ))}
+          </TextField>
+          <TextField
+            label="N° de Protocolo"
+            value={numeroProtocolo}
+            onChange={handleNumeroProtocoloChange}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleFiltroClick}
+            sx={{ backgroundColor: 'rgb(35, 35, 35)', '&:hover': { backgroundColor: 'rgb(35, 35, 35)' } }}
+          >
+            Filtrar
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleLimpiarFiltros}
+            sx={{ backgroundColor: 'rgb(35, 35, 35)', '&:hover': { backgroundColor: 'rgb(35, 35, 35)' } }}
+          >
+            Limpiar filtros
+          </Button>
+        </Box>
       </Box>
-    </Box>
 
-      {/* Tabla */}
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -1396,8 +1552,9 @@ const TablaRegistros = () => {
                       >
                         {selectedProtocoloId && estado !== 3 && (
                           <>
-                            <MenuItem onClick={() => handleOpenPaymentDialog(selectedProtocoloId)}>Acreditar Pago</MenuItem>
+                            <MenuItem onClick={handleOpenPaymentDialog}>Acreditar Pago</MenuItem>
                             <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Editar</MenuItem>
+                            <MenuItem onClick={handleOpenEncabezadoDialog}>Editar Encabezado</MenuItem>
                           </>
                         )}
                         {selectedProtocoloId && estado === 3 && (
@@ -1472,7 +1629,6 @@ const TablaRegistros = () => {
           <MenuItem value={10}>10</MenuItem>
           <MenuItem value={20}>20</MenuItem>
         </Select>
-        <Pagination count={totalPages} page={page} onChange={handlePageChange} color="primary" />
       </Box>
 
       <Dialog open={openPaymentDialog} onClose={handleClosePaymentDialog} maxWidth="sm" fullWidth>
@@ -1536,6 +1692,30 @@ const TablaRegistros = () => {
           </Button>
           <Button onClick={handleFinalize} color="primary">
             Finalizar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openEncabezadoDialog} onClose={handleCloseEncabezadoDialog} maxWidth="md" fullWidth>
+        <DialogTitle>Editar Encabezado</DialogTitle>
+        <DialogContent>
+          <Encabezado
+            data={encabezadoData}
+            handleChange={handleEncabezadoChange}
+            errors={errors}
+            profesionales={profesionales}
+            veterinarias={veterinarias}
+            especies={especies}
+            razas={razas}
+            sexos={sexos}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEncabezadoDialog} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={handleSaveEncabezado} color="primary">
+            Guardar
           </Button>
         </DialogActions>
       </Dialog>
