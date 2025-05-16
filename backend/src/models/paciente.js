@@ -33,7 +33,7 @@ const Paciente = sequelize.define('Paciente', {
     allowNull: false,
   },
 }, {
-  tableName: 'Pacientes',
+  tableName: 'pacientes',
   timestamps: false,
 });
 

@@ -32,7 +32,7 @@ const Pago = sequelize.define(
     },
   },
   {
-    tableName: "Pagos",
+    tableName: "pagos",
     timestamps: false,
   }
 );

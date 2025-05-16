@@ -68,7 +68,7 @@ const Hemograma = sequelize.define('Hemograma', {
     allowNull: true,
   }
 }, {
-  tableName: 'Hemogramas',
+  tableName: 'hemogramas',
   timestamps: false,
 });
 

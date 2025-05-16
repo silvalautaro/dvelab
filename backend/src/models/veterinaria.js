@@ -12,7 +12,7 @@ const Veterinaria = sequelize.define('Veterinaria', {
     allowNull: false,
   }
 }, {
-  tableName: 'Veterinarias',
+  tableName: 'veterinarias',
   timestamps: false,
 });
 

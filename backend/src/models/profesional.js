@@ -12,7 +12,7 @@ const Profesional = sequelize.define('Profesional', {
     allowNull: false,
   }
 }, {
-  tableName: 'Profesionales',
+  tableName: 'profesionales',
   timestamps: false,
 });
 

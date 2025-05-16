@@ -20,7 +20,7 @@ const Precio = sequelize.define('Precio', {
         allowNull: false,
     },
     }, {
-    tableName: 'Precios',
+    tableName: 'precios',
     timestamps: false
 });
 

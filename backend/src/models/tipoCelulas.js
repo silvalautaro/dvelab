@@ -13,7 +13,7 @@ const TipoCelula = sequelize.define('TipoCelula', {
     unique: true
   },
 }, {
-  tableName: 'TipoCelulas',
+  tableName: 'tipocelulas',
   timestamps: false,
 });
 

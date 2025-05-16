@@ -39,7 +39,7 @@ const Protocolo = sequelize.define('Protocolo', {
     allowNull: false,
   }
 }, {
-  tableName: 'Protocolos',
+  tableName: 'protocolos',
   timestamps: false
 });
 

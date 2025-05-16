@@ -12,7 +12,7 @@ const Categorias_Especies = sequelize.define('Categorias_Especies', {
         allowNull: false,
     }
 }, {
-    tableName: 'Categorias_especies',
+    tableName: 'categorias_especies',
     timestamps: false,
     onDelete: 'CASCADE',
 });

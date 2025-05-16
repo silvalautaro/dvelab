@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { Box, TextField, Button, Autocomplete } from '@mui/material';
+import { Box, TextField, Button, Autocomplete, Modal, Typography, Grid, Divider } from '@mui/material';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 // Esquema de validación usando Yup
 const validationSchema = yup.object().shape({
@@ -41,15 +42,26 @@ const getTodayDate = () => {
 };
 
 const FormularioIngresos = () => {
+    const navigate = useNavigate(); // Hook para redirigir
+    const [modalOpen, setModalOpen] = useState(false); // Estado para controlar el modal
+
     const {
         handleSubmit,
         control,
         formState: { errors },
-        reset
+        reset,
+        setValue
     } = useForm({
         resolver: yupResolver(validationSchema),
         defaultValues: {
             date: getTodayDate(),
+            protocolNumber: '',
+            moneySent: '',
+            tutor: '',
+            patient: '',
+            age: '',
+            nuevoVeterinaria: ''
+
         },
     });
 
@@ -112,9 +124,8 @@ const FormularioIngresos = () => {
 
         try {
             const response = await axios.post(`${backendUrl}/protocolos`, datosParaEnviar);
-            alert('Datos enviados correctamente');
             console.log('Respuesta del servidor:', response.data);
-            reset();
+            setModalOpen(true); 
         } catch (error) {
             console.error('Error al enviar los datos:', error);
             if (error.response) {
@@ -129,270 +140,375 @@ const FormularioIngresos = () => {
         }
     };
 
+    const handleEditProtocol = () => {
+        setModalOpen(false);
+        navigate('/dashboard/informes/tabla');
+    };
+
+    const handleLoadAnotherProtocol = () => {
+        reset();
+        setModalOpen(false);
+    };
+
     return (
-        <Box
-            component="form"
-            onSubmit={handleSubmit(onSubmit)}
-            sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-                width: '100%',
-                maxWidth: '600px',
-                margin: '0 auto',
-                padding: '16px',
-                backgroundColor: '#f9f9f9',
-                borderRadius: '8px',
-                boxShadow: '0 0 10px rgba(0,0,0,0.1)',
-            }}
-        >
-            <Controller
-                name="date"
-                control={control}
-                render={({ field }) => (
-                    <TextField
-                        {...field}
-                        label="Fecha"
-                        type="date"
-                        InputLabelProps={{ shrink: true }}
-                        error={!!errors.date}
-                        helperText={errors.date?.message}
-                        fullWidth
-                    />
-                )}
-            />
-
-            <Controller
-                name="protocolNumber"
-                control={control}
-                render={({ field }) => (
-                    <TextField
-                        {...field}
-                        label="Número de Protocolo"
-                        error={!!errors.protocolNumber}
-                        helperText={errors.protocolNumber?.message}
-                        fullWidth
-                    />
-                )}
-            />
-
-            <Controller
-                name="moneySent"
-                control={control}
-                render={({ field }) => (
-                    <TextField
-                        {...field}
-                        label="Dinero remitido"
-                        type="number"
-                        error={!!errors.moneySent}
-                        helperText={errors.moneySent?.message}
-                        fullWidth
-                    />
-                )}
-            />
-
-            <Controller
-                name="professional"
-                control={control}
-                render={({ field }) => (
-                    <Autocomplete
-                        {...field}
-                        options={options.professionals}
-                        getOptionLabel={(option) => option.nombre || option}
-                        onChange={(_, value) => field.onChange(value ? value.id_profesional : '')}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Profesional"
-                                error={!!errors.professional}
-                                helperText={errors.professional?.message}
-                            />
-                        )}
-                    />
-                )}
-            />
-
-            <Controller
-                name="veterinary"
-                control={control}
-                render={({ field }) => (
-                    <Autocomplete
-                        {...field}
-                        options={[...options.veterinaries, { id_veterinaria: 'Otro', nombre: 'Otro' }]} // Asegura que "Otro" es un objeto
-                        getOptionLabel={(option) => (typeof option === 'string' ? option : option.nombre)}
-                        onChange={(_, value) => {
-                            if (value?.id_veterinaria === 'Otro') {
-                                setIsOtherVeterinaria(true);
-                                field.onChange('');
-                            } else {
-                                setIsOtherVeterinaria(false);
-                                field.onChange(value ? value.id_veterinaria : '');
-                            }
-                        }}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Veterinaria"
-                                error={!!errors.veterinary}
-                                helperText={errors.veterinary?.message}
-                            />
-                        )}
-                    />
-                )}
-            />
-
-
-            {isOtherVeterinaria && (
-                <Controller
-                    name="nuevoVeterinaria"
-                    control={control}
-                    render={({ field }) => (
-                        <TextField
-                            {...field}
-                            label="Nombre de la nueva veterinaria"
-                            fullWidth
-                            error={!!errors.nuevoVeterinaria}
-                            helperText={errors.nuevoVeterinaria?.message}
-                        />
-                    )}
-                />
-            )}
-
-            <Controller
-                name="tutor"
-                control={control}
-                render={({ field }) => (
-                    <TextField
-                        {...field}
-                        label="Tutor"
-                        error={!!errors.tutor}
-                        helperText={errors.tutor?.message}
-                        fullWidth
-                    />
-                )}
-            />
-
-            <Controller
-                name="patient"
-                control={control}
-                render={({ field }) => (
-                    <TextField
-                        {...field}
-                        label="Paciente"
-                        error={!!errors.patient}
-                        helperText={errors.patient?.message}
-                        fullWidth
-                    />
-                )}
-            />
-
-            <Controller
-                name="species"
-                control={control}
-                render={({ field }) => (
-                    <Autocomplete
-                        {...field}
-                        options={options.species}
-                        getOptionLabel={(option) => option.tipo || ''}
-                        onChange={(_, value) => field.onChange(value?.id_especie || '')}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Especie"
-                                error={!!errors.species}
-                                helperText={errors.species?.message}
-                            />
-                        )}
-                    />
-                )}
-            />
-
-            <Controller
-                name="breed"
-                control={control}
-                render={({ field }) => (
-                    <Autocomplete
-                        {...field}
-                        options={options.breeds}
-                        getOptionLabel={(option) => option.nombre || ''}
-                        onChange={(_, value) => field.onChange(value.id_raza || '')}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Raza"
-                                error={!!errors.breed}
-                                helperText={errors.breed?.message}
-                            />
-                        )}
-                    />
-                )}
-            />
-
-            <Controller
-                name="sex"
-                control={control}
-                render={({ field }) => (
-                    <Autocomplete
-                        {...field}
-                        options={options.sexes}
-                        getOptionLabel={(option) => option.sexo || ''}
-                        onChange={(_, value) => field.onChange(value?.id_sexo || '')}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Sexo"
-                                error={!!errors.sex}
-                                helperText={errors.sex?.message}
-                            />
-                        )}
-                    />
-                )}
-            />
-
-            <Controller
-                name="age"
-                control={control}
-                render={({ field }) => (
-                    <TextField
-                        {...field}
-                        label="Edad"
-                        type="number"
-                        error={!!errors.age}
-                        helperText={errors.age?.message}
-                        fullWidth
-                    />
-                )}
-            />
-
-        <Controller
-                name="requestedAnalysis"
-                control={control}
-                render={({ field }) => (
-                    <Autocomplete
-                        {...field}
-                        options={options.analyses}
-                        getOptionLabel={(option) => option.estudio || ''}
-                        onChange={(_, value) => field.onChange(value?.id_estudio || '')}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Análisis solicitado"
-                                error={!!errors.requestedAnalysis}
-                                helperText={errors.requestedAnalysis?.message}
-                            />
-                        )}
-                    />
-                )}
-            />
-            <Button 
-                type="submit" 
-                variant="contained" 
-                sx={{ backgroundColor: '#000', color: '#fff', '&:hover': { backgroundColor: '#333' } }} 
-                fullWidth
+        <>
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '100%',
+                    padding: '16px',
+                }}
             >
-                Subir Orden
-            </Button>
-        </Box>
+                <Typography variant="h4" component="h1" gutterBottom>
+                    Formulario de Ingreso
+                </Typography>
+                <Divider sx={{ width: '100%', maxWidth: '800px', marginBottom: '16px' }} />
+
+                <Box
+                    component="form"
+                    onSubmit={handleSubmit(onSubmit)}
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
+                        width: '100%',
+                        maxWidth: '800px',
+                        margin: '0 auto',
+                        padding: '16px',
+                        backgroundColor: '#f9f9f9',
+                        borderRadius: '8px',
+                        boxShadow: '0 0 10px rgba(0,0,0,0.1)',
+                        marginTop: '50px'
+                    }}
+                >
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                            <Controller
+                                name="date"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextField
+                                        {...field}
+                                        label="Fecha"
+                                        type="date"
+                                        InputLabelProps={{ shrink: true }}
+                                        error={!!errors.date}
+                                        helperText={errors.date?.message}
+                                        fullWidth
+                                    />
+                                )}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <Controller
+                                name="protocolNumber"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextField
+                                        {...field}
+                                        label="Número de Protocolo"
+                                        error={!!errors.protocolNumber}
+                                        helperText={errors.protocolNumber?.message}
+                                        fullWidth
+                                    />
+                                )}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <Controller
+                                name="moneySent"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextField
+                                        {...field}
+                                        label="Dinero remitido"
+                                        type="number"
+                                        error={!!errors.moneySent}
+                                        helperText={errors.moneySent?.message}
+                                        fullWidth
+                                    />
+                                )}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <Controller
+                                name="professional"
+                                control={control}
+                                render={({ field }) => (
+                                    <Autocomplete
+                                        options={options.professionals}
+                                        getOptionLabel={(option) => option.nombre || ''}
+                                        value={options.professionals.find((opt) => opt.id_profesional === field.value) || null}
+                                        onChange={(_, value) => field.onChange(value?.id_profesional || '')}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label="Profesional"
+                                                error={!!errors.professional}
+                                                helperText={errors.professional?.message}
+                                            />
+                                        )}
+                                    />
+                                )}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <Controller
+                                name="veterinary"
+                                control={control}
+                                render={({ field }) => (
+                                    <Autocomplete
+                                        options={[...options.veterinaries, { id_veterinaria: 'Otro', nombre: 'Otro' }]}
+                                        getOptionLabel={(option) => (typeof option === 'string' ? option : option.nombre)}
+                                        value={
+                                            [...options.veterinaries, { id_veterinaria: 'Otro', nombre: 'Otro' }]
+                                            .find((opt) => opt.id_veterinaria === field.value) || null
+                                        }
+                                        onChange={(_, value) => {
+                                            if (value?.id_veterinaria === 'Otro') {
+                                                setIsOtherVeterinaria(true);
+                                                field.onChange('');
+                                            } else {
+                                                setIsOtherVeterinaria(false);
+                                                field.onChange(value?.id_veterinaria || '');
+                                            }
+                                        }}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label="Veterinaria"
+                                                error={!!errors.veterinary}
+                                                helperText={errors.veterinary?.message}
+                                            />
+                                        )}
+                                    />
+                                )}
+                            />
+                        </Grid>
+
+                        {isOtherVeterinaria && (
+                            <Grid item xs={12} sm={6}>
+                                <Controller
+                                    name="nuevoVeterinaria"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <TextField
+                                            {...field}
+                                            label="Nombre de la nueva veterinaria"
+                                            fullWidth
+                                            error={!!errors.nuevoVeterinaria}
+                                            helperText={errors.nuevoVeterinaria?.message}
+                                        />
+                                    )}
+                                />
+                            </Grid>
+                        )}
+
+                        <Grid item xs={12} sm={6}>
+                            <Controller
+                                name="tutor"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextField
+                                        {...field}
+                                        label="Tutor"
+                                        error={!!errors.tutor}
+                                        helperText={errors.tutor?.message}
+                                        fullWidth
+                                    />
+                                )}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <Controller
+                                name="patient"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextField
+                                        {...field}
+                                        label="Paciente"
+                                        error={!!errors.patient}
+                                        helperText={errors.patient?.message}
+                                        fullWidth
+                                    />
+                                )}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <Controller
+                                name="species"
+                                control={control}
+                                render={({ field }) => (
+                                    <Autocomplete
+                                        options={options.species}
+                                        getOptionLabel={(option) => option.tipo || ''}
+                                        value={options.species.find((opt) => opt.id_especie === field.value) || null}
+                                        onChange={(_, value) => field.onChange(value?.id_especie || '')}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label="Especie"
+                                                error={!!errors.species}
+                                                helperText={errors.species?.message}
+                                            />
+                                        )}
+                                    />
+                                )}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <Controller
+                                name="breed"
+                                control={control}
+                                render={({ field }) => (
+                                    <Autocomplete
+                                        options={options.breeds}
+                                        getOptionLabel={(option) => option.nombre || ''}
+                                        value={options.breeds.find((opt) => opt.id_raza === field.value) || null}
+                                        onChange={(_, value) => field.onChange(value?.id_raza || '')}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label="Raza"
+                                                error={!!errors.breed}
+                                                helperText={errors.breed?.message}
+                                            />
+                                        )}
+                                    />
+                                )}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <Controller
+                                name="sex"
+                                control={control}
+                                render={({ field }) => (
+                                    <Autocomplete
+                                        options={options.sexes}
+                                        getOptionLabel={(option) => option.sexo || ''}
+                                        value={options.sexes.find((opt) => opt.id_sexo === field.value) || null}
+                                        onChange={(_, value) => field.onChange(value?.id_sexo || '')}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label="Sexo"
+                                                error={!!errors.sex}
+                                                helperText={errors.sex?.message}
+                                            />
+                                        )}
+                                    />
+                                )}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <Controller
+                                name="age"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextField
+                                        {...field}
+                                        label="Edad"
+                                        type="number"
+                                        error={!!errors.age}
+                                        helperText={errors.age?.message}
+                                        fullWidth
+                                    />
+                                )}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                            <Controller
+                                name="requestedAnalysis"
+                                control={control}
+                                render={({ field }) => (
+                                    <Autocomplete
+                                        options={options.analyses}
+                                        getOptionLabel={(option) => option.estudio || ''}
+                                        value={options.analyses.find((opt) => opt.id_estudio === field.value) || null}
+                                        onChange={(_, value) => field.onChange(value?.id_estudio || '')}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label="Análisis solicitado"
+                                                error={!!errors.requestedAnalysis}
+                                                helperText={errors.requestedAnalysis?.message}
+                                            />
+                                        )}
+                                    />
+                                )}
+                            />
+                        </Grid>
+                    </Grid>
+
+                    <Button 
+                        type="submit" 
+                        variant="contained" 
+                        sx={{ backgroundColor: '#000', color: '#fff', '&:hover': { backgroundColor: '#333' }, mt: 2 }} 
+                        fullWidth
+                    >
+                        Subir Orden
+                    </Button>
+                </Box>
+            </Box>
+
+            <Modal
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                aria-labelledby="modal-title"
+                aria-describedby="modal-description"
+            >
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: 400,
+                        bgcolor: 'background.paper',
+                        border: '2px solid #000',
+                        boxShadow: 24,
+                        p: 4,
+                    }}
+                >
+                    <Typography id="modal-title" variant="h6" component="h2">
+                        Protocolo creado correctamente
+                    </Typography>
+                    <Typography id="modal-description" sx={{ mt: 2 }}>
+                        ¿Qué desea hacer a continuación?
+                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3, gap: 2 }}>
+                        <Button 
+                            variant="contained"
+                            color="success" 
+                            onClick={handleEditProtocol} 
+                            sx={{ width: "50%" }}>
+                            Editar protocolo
+                        </Button>
+                        
+                        <Button
+                            variant="outlined"
+                            color="success"
+                            onClick={handleLoadAnotherProtocol}
+                            sx={{ width: "50%" }}>
+                            Cargar otro protocolo
+                        </Button>
+                    </Box>
+                </Box>
+            </Modal>
+        </>
     );
 };
 

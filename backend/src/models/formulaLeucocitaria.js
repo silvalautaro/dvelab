@@ -28,7 +28,7 @@ const FormulaLeucocitaria = sequelize.define('FormulaLeucocitaria', {
         allowNull: true,
     }
     }, {
-    tableName: 'FormulaLeucocitaria',
+    tableName: 'formulaleucocitaria',
     timestamps: false,
 });
 

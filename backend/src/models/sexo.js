@@ -12,7 +12,7 @@ const Sexo = sequelize.define('Sexo', {
     allowNull: false,
   },
 }, {
-  tableName: 'Sexos',
+  tableName: 'sexos',
   timestamps: false,
 });
 

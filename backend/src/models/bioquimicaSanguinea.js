@@ -116,7 +116,7 @@ const Bioquimica_Sanguinea = sequelize.define('Bioquimica_Sanguinea', {
         allowNull: true,
     }
 },{
-    tableName: 'Bioquimica_Sanguinea',
+    tableName: 'bioquimica_sanguinea',
     timestamps: false,
 });
 

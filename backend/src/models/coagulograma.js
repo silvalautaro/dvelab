@@ -20,7 +20,7 @@ const Coagulograma = sequelize.define('Coagulograma', {
         allowNull: true,
     },
 }, {
-    tableName: 'Coagulogramas',
+    tableName: 'coagulogramas',
     timestamps: false,
 });
 

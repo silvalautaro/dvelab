@@ -8,6 +8,7 @@ import FormularioIngresos from './pages/FormularioIngresos';
 import TablaRegistros from './pages/TablaRegistros';
 import CuentasPendientes from './pages/CuentasPendientes';
 import Configuracion from './pages/Configuracion';
+import logo from './assets/logo.png';
 
 const App = () => {
     // Simula el estado de autenticación
@@ -22,32 +23,31 @@ const App = () => {
                 {/* Rutas protegidas */}
                 {isAuthenticated ? (
                     <Route 
-                        path="/dashboard/*" 
-                        element={
-                            <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-                                {/* Navbar */}
-                                <Navbar />
-                                
-                                {/* Contenedor principal con Sidebar y contenido */}
-                                <div style={{ display: 'flex', flex: 1 }}>
-                                    {/* Sidebar */}
-                                    <Sidebar />
-                                    
-                                    {/* Contenido */}
-                                    <div style={{ flex: 1, padding: '16px', overflow: 'auto' }}>
-                                        <Routes>
-                                            {/* Páginas del dashboard */}
-                                            <Route path="/" element={<QuotesPage />} />
-                                            <Route path="ingresos/formulario" element={<FormularioIngresos />} />
-                                            <Route path="informes/tabla" element={<TablaRegistros />} />
-                                            <Route path="cuentas/pendientes" element={<CuentasPendientes />} />
-                                            <Route path="configuracion" element={<Configuracion />} />
-                                        </Routes>
-                                    </div>
+                    path="/dashboard/*" 
+                    element={
+                        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+                            <Navbar />
+                            <div style={{ display: 'flex', flex: 1 }}>
+                                <Sidebar />
+                                <div style={{ flex: 1, padding: '16px', overflow: 'auto' }}>
+                                    <Routes>
+                                        {/* Logo centrado solo en /dashboard */}
+                                        <Route path="" element={
+                                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                                                <img src={logo} alt="Logo Dvelab" style={{ maxWidth: '800px', width: '100%', height: 'auto' }} />
+                                            </div>
+                                        } />
+                                        {/* Resto de páginas */}
+                                        <Route path="ingresos/formulario" element={<FormularioIngresos />} />
+                                        <Route path="informes/tabla" element={<TablaRegistros />} />
+                                        <Route path="cuentas/pendientes" element={<CuentasPendientes />} />
+                                        <Route path="configuracion" element={<Configuracion />} />
+                                    </Routes>
                                 </div>
                             </div>
-                        } 
-                    />
+                        </div>
+                    } 
+                />
                 ) : (
                     <Route path="*" element={<Navigate to="/login" />} />
                 )}

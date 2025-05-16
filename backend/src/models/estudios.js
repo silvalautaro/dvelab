@@ -12,7 +12,7 @@ const Estudio = sequelize.define('Estudio', {
     allowNull: false,
   }
 }, {
-  tableName: 'Estudios',
+  tableName: 'estudios',
   timestamps: false,
 });
 

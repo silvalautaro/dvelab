@@ -367,7 +367,6 @@ const TablaRegistros = () => {
   };
 
   const handleEncabezadoChange = (field, value) => {
-    console.log(`Campo actualizado: ${field}, Nuevo valor: ${value}`);
     setEncabezadoData((prevData) => ({
       ...prevData,
       [field]: value,
@@ -582,8 +581,8 @@ const handleCloseEncabezadoDialog = () => {
       };
       const addCoagulograma = {
         id_protocolo: selectedProtocoloId,
-        tiempo_protrombina: convertToNumberOrNull(coagulogramaData['tiempo-de-protrombina--t.p']),
-        tiempo_tromboplastina: convertToNumberOrNull(coagulogramaData['tiempo-de-tromboplastina-parcial-activado---kptt'])
+        tiempo_protrombina: convertToNumberOrNull(coagulogramaData['tiempo-de-protrombina']),
+        tiempo_tromboplastina: convertToNumberOrNull(coagulogramaData['tiempo-de-tromboplastina-parcial'])
       };
 
       const addFormulaL = tipoCelulas.map(tc => ({
@@ -639,7 +638,7 @@ const handleCloseEncabezadoDialog = () => {
       
       await axios.put(`${process.env.REACT_APP_BACKEND_URL}/protocolos/${selectedProtocoloId}`, { id_estado: 3 });
   
-      alert('Protocolo finalizado correctamente, <strong>ya no podrá editarlo</strong>');
+      alert('Protocolo finalizado correctamente, YA NO PODRÁ EDITARLO');
       const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos`);
       setData(response.data.result);
       setprotocoloEstado();
@@ -720,17 +719,84 @@ const handleCloseEncabezadoDialog = () => {
         age: protocolo.edad || 0,
       });
 
-      // Cargar datos adicionales según el estado del protocolo
       if (estado === 3 || estado === 2) {
         const hemogramaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/hemogramas/${id_protocolo}`);
+        const hemograma = hemogramaResponse.data.result || {};
+
+
+        const mappedHemograma = {
+          'recuento-globulos-rojos': hemograma.recuento_globulos_rojos || '',
+          'hemoglobina': hemograma.hemoglobina || '',
+          'hematocrito': hemograma.hematocrito || '',
+          'vcm': hemograma.vcm || '',
+          'hcm': hemograma.hcm || '',
+          'chcm': hemograma.chcm || '',
+          'rdw': hemograma.rdw || '',
+          'indice-reticulocitario': hemograma.indice_reticulocitario || '',
+          'recuento-plaquetario': hemograma.recuento_plaquetario || '',
+          'frotis': hemograma.frotis || '',
+          'recuento-leucocitario': hemograma.recuento_leucocitario || '',
+          'caracteristicas-serie-eritroide': hemograma.caracteristicas_serie_eritroide || '',
+          'observaciones': hemograma.observaciones || '',
+          'morfologia-plaquetaria': hemograma.morfologia_plaquetaria || ''
+        };
+
+        setHemogramaData(mappedHemograma);
+
         const formulaLeucocitariaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/formula-leucocitaria/${id_protocolo}`);
         const bioquimicaSanguineaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/bioquimica-sanguinea/${id_protocolo}`);
         const coagulogramaResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/coagulogramas/${id_protocolo}`);
 
-        setHemogramaData(hemogramaResponse.data.result || {});
-        setFormulaLeucocitariaData(formulaLeucocitariaResponse.data.result || {});
-        setBioquimicaSanguineaData(bioquimicaSanguineaResponse.data.result || {});
-        setCoagulogramaData(coagulogramaResponse.data.result || {});
+        const formulaLeucocitaria = formulaLeucocitariaResponse.data.result || [];
+
+
+        const mappedFormulaLeucocitaria = formulaLeucocitaria.reduce((acc, item) => {
+          const relativaKey = `${removeAccents(tipoCelulas.find(tc => tc.id_tipo === item.id_tipo_celula)?.tipo_celula.toLowerCase().replace(/ /g, '-'))}-relativa`;
+          const absolutaKey = relativaKey.replace('relativa', 'absoluta');
+          acc[relativaKey] = item.relativa;
+          acc[absolutaKey] = item.absoluta;
+          return acc;
+        }, {});
+
+        setFormulaLeucocitariaData({ ...mappedFormulaLeucocitaria, observaciones: formulaLeucocitaria[0]?.observaciones || null });
+
+
+        const mappedBioquimicaSanguinea = {
+          'urea': bioquimicaSanguineaResponse.data.result?.urea || '',
+          'creatinina': bioquimicaSanguineaResponse.data.result?.creatinina || '',
+          'glucemia': bioquimicaSanguineaResponse.data.result?.glucemia || '',
+          'gpt-(alt)': bioquimicaSanguineaResponse.data.result?.gpt || '',
+          'got-(ast)': bioquimicaSanguineaResponse.data.result?.got || '',
+          'fosfatasa-alcalina-serica-(fas)': bioquimicaSanguineaResponse.data.result?.fosfatasa_alcalina || '',
+          'g-glutamil-transferasa-(ggt)': bioquimicaSanguineaResponse.data.result?.g_glutamil_transferasa || '',
+          'proteinas-totales': bioquimicaSanguineaResponse.data.result?.proteinas_totales || '',
+          'albumina': bioquimicaSanguineaResponse.data.result?.albumina || '',
+          'globulinas': bioquimicaSanguineaResponse.data.result?.globulinas || '',
+          'relacion-alb/glob': bioquimicaSanguineaResponse.data.result?.relacion_alb_glob || '',
+          'bilirrubina-total-(bt)': bioquimicaSanguineaResponse.data.result?.bilirrubina_total || '',
+          'bilirrubina-directa-(bd)': bioquimicaSanguineaResponse.data.result?.bilirrubina_directa || '',
+          'bilirrubina-indirecta-(bi)': bioquimicaSanguineaResponse.data.result?.bilirrubina_indirecta || '',
+          'amilasa': bioquimicaSanguineaResponse.data.result?.amilasa || '',
+          'trigliceridos-(tag)': bioquimicaSanguineaResponse.data.result?.trigliceridos || '',
+          'colesterol-total-(col)': bioquimicaSanguineaResponse.data.result?.colesterol_total || '',
+          'creatinin-p-kinasa-(cpk)': bioquimicaSanguineaResponse.data.result?.creatinina_p_kinasa || '',
+          'hdl-col': bioquimicaSanguineaResponse.data.result?.hdl_col || '',
+          'ldl-col': bioquimicaSanguineaResponse.data.result?.ldl_col || '',
+          'calcio-total-(ca)': bioquimicaSanguineaResponse.data.result?.calcio_total || '',
+          'fosforo-(p)': bioquimicaSanguineaResponse.data.result?.fosforo || '',
+          'sodio-(na)': bioquimicaSanguineaResponse.data.result?.sodio || '',
+          'potasio-(k)': bioquimicaSanguineaResponse.data.result?.potasio || '',
+          'cloro-(cl)': bioquimicaSanguineaResponse.data.result?.cloro || '',
+          'observaciones': bioquimicaSanguineaResponse.data.result?.observaciones || ''
+        };
+        setBioquimicaSanguineaData(mappedBioquimicaSanguinea);
+        
+        const mappedCoagulograma = {
+          'tiempo-de-protrombina': coagulogramaResponse.data.result?.tiempo_protrombina || '',
+          'tiempo-de-tromboplastina-parcial': coagulogramaResponse.data.result?.tiempo_tromboplastina || ''
+        };
+        
+        setCoagulogramaData(mappedCoagulograma);
       } else {
         setHemogramaData({});
         setFormulaLeucocitariaData({});
@@ -816,8 +882,8 @@ const handleCloseEncabezadoDialog = () => {
 
       const addCoagulograma = {
         id_protocolo: selectedProtocoloId,
-        tiempo_protrombina: convertToNumberOrNull(coagulogramaData['tiempo-de-protrombina--t.p']),
-        tiempo_tromboplastina: convertToNumberOrNull(coagulogramaData['tiempo-de-tromboplastina-parcial-activado---kptt'])
+        tiempo_protrombina: convertToNumberOrNull(coagulogramaData['tiempo-de-protrombina']),
+        tiempo_tromboplastina: convertToNumberOrNull(coagulogramaData['tiempo-de-tromboplastina-parcial'])
       };
 
       const addFormulaL = tipoCelulas.map(tc => ({
@@ -874,11 +940,6 @@ const handleCloseEncabezadoDialog = () => {
       setPendingState();
       setprotocoloEstado();
 
-      console.log("Datos enviados:");
-      console.log("Hemograma:", addHemograma);
-      console.log("Bioquimica:", addBioquimica);
-      console.log("Coagulograma:", addCoagulograma);
-      console.log("Formula Leucocitaria:", addFormulaL);
       alert('Datos guardados correctamente');
       handleCloseDialog();
     } catch (error) {
@@ -919,7 +980,7 @@ const handleCloseEncabezadoDialog = () => {
   
   const handleHemogramaChange = (e) => {
     const id = removeAccents(e.target.id);
-    const value = parseFloat(e.target.value);
+    const value = isNaN(e.target.value) ? e.target.value : parseFloat(e.target.value);
     const updatedData = { ...hemogramaData, [id]: value };
   
     if (id === 'hematocrito' || id === 'recuento-globulos-rojos' || id === 'hemoglobina') {
@@ -1012,6 +1073,7 @@ const handleCloseEncabezadoDialog = () => {
         ? formulaLeucocitariaResponse.data.result 
         : [formulaLeucocitariaResponse.data.result];
       const coagulograma = coagulogramaResponse.data.result;
+      
       const bioquimicaSanguinea = bioquimicaSanguineaResponse.data.result;
       const profesional = profesionalResponse.data.result;
       const paciente = pacienteResponse.data.result;
@@ -1026,8 +1088,11 @@ const handleCloseEncabezadoDialog = () => {
       const raza = razaEncontrada ? razaEncontrada.nombre : "No disponible";
 
       const sexosResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/generos`);
-      const sexoEncontrado = sexosResponse.data.result.find(s => s.id_sexo === paciente.id_sexo);
-      const sexo = sexoEncontrado ? sexo.sexo : "No disponible";
+      let sexo = "No disponible";
+      if (sexosResponse.data.result) {
+        const sexoEncontrado = sexosResponse.data.result.find(s => s.id_sexo === paciente.id_sexo);
+        sexo = sexoEncontrado ? sexoEncontrado.sexo : "No disponible";
+      }
 
       const estudioResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/estudios/${protocolo.id_estudio}`);
 
@@ -1331,6 +1396,10 @@ const handleCloseEncabezadoDialog = () => {
   };
 
   const handleOpenPaymentDialog = async (id_protocolo) => {
+    if (typeof id_protocolo !== 'number' && typeof id_protocolo !== 'string') {
+      console.error('Invalid id_protocolo:', id_protocolo);
+      return;
+    }
     setSelectedProtocoloId(id_protocolo);
     setOpenPaymentDialog(true);
     handleCloseMenu();
@@ -1430,7 +1499,9 @@ const handleCloseEncabezadoDialog = () => {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" mb={2}>
+      <h1>Tabla de registros</h1>
+      <hr />
+      <Box display="flex" justifyContent="space-between" mb={2} marginTop="40px">
         <Box display="flex" gap={2}>
           <TextField
             label="Desde"
@@ -1552,8 +1623,8 @@ const handleCloseEncabezadoDialog = () => {
                       >
                         {selectedProtocoloId && estado !== 3 && (
                           <>
-                            <MenuItem onClick={handleOpenPaymentDialog}>Acreditar Pago</MenuItem>
-                            <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Editar</MenuItem>
+                            <MenuItem onClick={() => handleOpenPaymentDialog(selectedProtocoloId)}>Acreditar Pago</MenuItem>
+                            <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Editar protocolo</MenuItem>
                             <MenuItem onClick={handleOpenEncabezadoDialog}>Editar Encabezado</MenuItem>
                           </>
                         )}
@@ -1632,7 +1703,7 @@ const handleCloseEncabezadoDialog = () => {
       </Box>
 
       <Dialog open={openPaymentDialog} onClose={handleClosePaymentDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Acreditar Pago para Protocolo N° ({selectedProtocoloId})</DialogTitle>
+        <DialogTitle>Acreditar Pago para Protocolo N° {selectedProtocoloId || ''}</DialogTitle>
         <DialogContent>
           <TextField
             margin="dense"

@@ -354,7 +354,7 @@ useEffect(() => {
       
       await axios.put(`${process.env.REACT_APP_BACKEND_URL}/protocolos/${selectedProtocoloId}`, { id_estado: 3 });
   
-      alert('Protocolo finalizado correctamente, <strong>ya no podrá editarlo</strong>');
+      alert('Protocolo finalizado correctamente, YA NO PODRÁ EDITARLO');
       const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/protocolos`);
       setData(response.data.result);
       setprotocoloEstado();
@@ -1211,34 +1211,22 @@ useEffect(() => {
   const totalPages = Math.ceil(data.length / rowsPerPage);
 
   return (
-    <Box p={3}>
+
+    <Box>
       {/* Encabezado con Totales */}
-      <Box
-        display="flex"
-        justifyContent="space-evenly"
-        mb={2}
-        p={2}
-        bgcolor="#f5f5f5"
-        borderRadius="8px"
-      >
-        <Box>
-          <strong>Saldados:</strong> <span style={{ color: "green" }}>{completados}</span>
-        </Box>
-        <Box>
-          <strong>Pendientes:</strong> <span style={{ color: "orange" }}>{pendientes}</span>
-        </Box>
-      </Box>
+      <h1>Cuentas Pendientes</h1>
+      <hr />
 
       {/* Filtros */}
-      <Box display="flex" justifyContent="space-between" mb={2}>
-  <Box display="flex" gap={2}>
-    <TextField
-      label="Desde"
-      type="date"
-      InputLabelProps={{ shrink: true }}
-      value={fechaInicio}
-      onChange={handleFechaInicioChange}
-    />
+      <Box display="flex" justifyContent="space-between" mb={2} marginTop="40px">
+      <Box display="flex" gap={2}>
+        <TextField
+          label="Desde"
+          type="date"
+          InputLabelProps={{ shrink: true }}
+          value={fechaInicio}
+          onChange={handleFechaInicioChange}
+        />
     <TextField
       label="Hasta"
       type="date"
@@ -1437,7 +1425,25 @@ useEffect(() => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Box
+        display="flex"
+        justifyContent="space-evenly"
+        mb={2}
+        p={2}
+        bgcolor="#f5f5f5"
+        borderRadius="8px"
+        marginTop="40px"
+      >
+        <Box>
+          <strong>Saldados:</strong> <span style={{ color: "green" }}>{completados}</span>
+        </Box>
+        <Box>
+          <strong>Pendientes:</strong> <span style={{ color: "orange" }}>{pendientes}</span>
+        </Box>
+      </Box>
     </Box>
+    
   );
 };
 
