@@ -22,6 +22,7 @@ import {
   Step,
   StepLabel,
   DialogContentText,
+  TablePagination,
 } from "@mui/material";
 import { Box } from "@mui/system";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -135,7 +136,7 @@ const TextFieldGroupWithRelAbs = ({ labels, data, handleChange, handleObservacio
 );
 
 const CuentasPendientes = () => {
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [anchorEl, setAnchorEl] = useState(null);
   const [openMenu, setOpenMenu] = useState(false);
@@ -426,7 +427,10 @@ useEffect(() => {
       console.error('Error fetching data:', error);
     }
   };
-
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
   const handlePageChange = (_, newPage) => {
     setPage(newPage);
   };
@@ -1212,7 +1216,10 @@ useEffect(() => {
 
   return (
 
-    <Box>
+    <Box sx={{
+      '& .MuiTablePagination-selectLabel': {
+        fontWeight: 'bold',
+      }}}>
       {/* Encabezado con Totales */}
       <h1>Cuentas Pendientes</h1>
       <hr />
@@ -1293,8 +1300,15 @@ useEffect(() => {
 </Box>
 
       {/* Tabla */}
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper}
+      sx={{ height: '50vh', margin: '0 auto', display: 'flex', flexDirection: 'column' }}
+      >
+        <Table stickyHeader
+        sx={{
+          '& th': { fontWeight: 'bold', textAlign: 'center', borderBottom: '2px solid #ccc' },
+          '& td': { textAlign: 'center' },
+          border: '1px solid #ccc',
+        }}>
           <TableHead>
             <TableRow>
               <TableCell>Estado</TableCell>
@@ -1307,8 +1321,8 @@ useEffect(() => {
           </TableHead>
           <TableBody>
   {data
-    .slice((page - 1) * rowsPerPage, page * rowsPerPage)
-    .map((row, index) => {
+     .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
+     .map((row, index) => {
       const precioEstudio = row.Estudio.Precios[0].precio;
       const formatCurrency = (amount) => {
         return new Intl.NumberFormat('es-ES', {
@@ -1316,7 +1330,7 @@ useEffect(() => {
           currency: 'ARS',
         }).format(amount);
       };
-
+      const formattedDate = row.fecha.split('-').reverse().join('/');
       const formatDate = (dateString) => {
         const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
         return new Date(dateString).toLocaleDateString('es-ES', options);
@@ -1325,10 +1339,16 @@ useEffect(() => {
       const estadoCalculado = determinarEstado(row.importe, precioEstudio);
 
       return (
-        <TableRow key={index}>
+        <TableRow key={index}
+        sx={{
+          backgroundColor: index % 2 === 0 ? '#f5f5f5' : 'white', 
+          '&:hover': {
+            backgroundColor: '#e0f2f1'
+          },
+        }}>
           <TableCell>{estadoCalculado}</TableCell>
           <TableCell>{row.id_protocolo}</TableCell>
-          <TableCell>{formatDate(row.fecha)}</TableCell>
+          <TableCell>{formattedDate}</TableCell>
           <TableCell>{row.Profesional.nombre || 'Desconocido'}</TableCell>
           <TableCell style={{ fontWeight: 'bold' }}>
             {formatCurrency(row.importe)}
@@ -1347,19 +1367,17 @@ useEffect(() => {
       </TableContainer>
 
       {/* Paginación */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
-        <Select
-          value={rowsPerPage}
-          onChange={handleRowsPerPageChange}
-          displayEmpty
-          inputProps={{ "aria-label": "Registros por página" }}
-        >
-          <MenuItem value={5}>5</MenuItem>
-          <MenuItem value={10}>10</MenuItem>
-          <MenuItem value={20}>20</MenuItem>
-        </Select>
-        <Pagination count={totalPages} page={page} onChange={handlePageChange} color="primary" />
-      </Box>
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 20]}
+          component="div"
+          count={data.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handlePageChange}
+          onRowsPerPageChange={handleRowsPerPageChange}
+          labelRowsPerPage="Registros por página"
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+        />
 
       <Dialog open={openPaymentDialog} onClose={handleClosePaymentDialog} maxWidth="sm" fullWidth>
         <DialogTitle>Acreditar Pago para Protocolo N° ({selectedProtocoloId})</DialogTitle>

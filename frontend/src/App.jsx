@@ -25,9 +25,9 @@ const App = () => {
                     <Route 
                     path="/dashboard/*" 
                     element={
-                        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                             <Navbar />
-                            <div style={{ display: 'flex', flex: 1 }}>
+                            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
                                 <Sidebar />
                                 <div style={{ flex: 1, padding: '16px', overflow: 'auto' }}>
                                     <Routes>

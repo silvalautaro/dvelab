@@ -12,7 +12,9 @@ const Navbar = () => {
                     component="img"
                     src={logo}
                     alt="Logo de la empresa"
-                    sx={{ height: '50px', width: 'auto' }}
+                    sx={{ height: '50px', width: 'auto' , cursor: 'pointer' }} 
+                    onClick={() => window.location.href = '/dashboard'}
+                    onMouseOver={(e) => e.currentTarget.title = 'Home'}
                 />
                 {/* Botón de cerrar sesión */}
                 <LogoutButton />

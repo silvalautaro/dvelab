@@ -495,7 +495,7 @@ const FormularioIngresos = () => {
                             color="success" 
                             onClick={handleEditProtocol} 
                             sx={{ width: "50%" }}>
-                            Editar protocolo
+                            Ir a Tabla de registros
                         </Button>
                         
                         <Button

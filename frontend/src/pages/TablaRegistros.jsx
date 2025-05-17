@@ -22,6 +22,7 @@ import {
   Step,
   StepLabel,
   DialogContentText,
+  TablePagination,
 } from "@mui/material";
 import { Box } from "@mui/system";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -49,9 +50,9 @@ const estudiosMap = {
 };
 
 const estadosMap = {
-  1: 'Ingresado',
-  2: 'Pendiente',
-  3: 'Completado'
+  1: 'Análisis Ingresado',
+  2: 'Análisis Pendiente',
+  3: 'Anáilisis Completado'
 };
 
 const removeAccents = (str) => {
@@ -285,7 +286,7 @@ const Encabezado = ({ data, handleChange, errors, profesionales, veterinarias, e
 );
 
 const TablaRegistros = () => {
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [anchorEl, setAnchorEl] = useState(null);
   const [openMenu, setOpenMenu] = useState(false);
@@ -680,12 +681,13 @@ const handleCloseEncabezadoDialog = () => {
     }
   };
 
-  const handlePageChange = (_, newPage) => {
+  const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
 
-  const handleRowsPerPageChange = (event) => {
-    setRowsPerPage(event.target.value);
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
   };
 
   const handleClick = (event, id_protocolo, id_estado) => {
@@ -1131,12 +1133,12 @@ const handleCloseEncabezadoDialog = () => {
           ['', '']],
         body: [
         ['Número de Protocolo', protocolo.id_protocolo || ''],
-        ['Fecha', protocolo.fecha || ''],
+        ['Fecha', protocolo.fecha.split('-').reverse().join('/') || ''],
         ['Profesional Veterinario', profesional.nombre || ''],
         ['Tutor', paciente.tutor || ''],
         ['Estudio Solicitado', estudioSolicitado || '']]
       });
-
+      
       // Posición X para la segunda tabla (ajusta el valor según el ancho de la primera tabla)
       const posicionX = 120;
 
@@ -1498,7 +1500,10 @@ const handleCloseEncabezadoDialog = () => {
   };
 
   return (
-    <Box>
+    <Box sx={{
+      '& .MuiTablePagination-selectLabel': {
+        fontWeight: 'bold',
+      }}}>
       <h1>Tabla de registros</h1>
       <hr />
       <Box display="flex" justifyContent="space-between" mb={2} marginTop="40px">
@@ -1558,149 +1563,158 @@ const handleCloseEncabezadoDialog = () => {
         </Box>
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Estado</TableCell>
-              <TableCell>Número de Protocolo</TableCell>
-              <TableCell>Emisión</TableCell>
-              <TableCell>Análisis Solicitado</TableCell>
-              <TableCell>Importe</TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {data
-              .slice((page - 1) * rowsPerPage, page * rowsPerPage)
-              .map((row, index) => {
-                const precioEstudio = row.Estudio.Precios[0].precio;
-                const formatCurrency = (amount) => {
-                  return new Intl.NumberFormat('es-ES', {
-                    style: 'currency',
-                    currency: 'ARS',
-                  }).format(amount);
-                };
-                
-                let importeColor = '';
-                if (row.importe === precioEstudio) {
-                  importeColor = 'rgb(91, 189, 91)';
-                } else if (row.importe > 0 && row.importe < precioEstudio) {
-                  importeColor = 'rgb(248, 248, 108)'; 
-                } else if (row.importe === 0) {
-                  importeColor = 'rgb(243, 71, 71)'; 
-                }
-
-                // Formatear la fecha de emisión
-                const formattedDate = new Date(row.fecha).toLocaleDateString('es-ES', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                });
-
-                return (
-                  <TableRow key={index}>
-                    <TableCell>{estadosMap[row.id_estado] || 'Desconocido'}</TableCell>
-                    <TableCell>{row.id_protocolo}</TableCell>
-                    <TableCell>{formattedDate}</TableCell>
-                    <TableCell>{estudiosMap[row.id_estudio] || 'Desconocido'}</TableCell>
-                    <TableCell style={{ backgroundColor: importeColor, textAlign: 'center', fontWeight: 'bold' }}>
-                        {formatCurrency(row.importe)}
-                    </TableCell>
-                    <TableCell>
-                        <IconButton onClick={(event) => handleClick(event, row.id_protocolo, row.id_estado)}>
-                          <MoreVertIcon />
-                        </IconButton>
-                        <Menu
-                        anchorEl={anchorEl}
-                        open={openMenu}
-                        slotProps={{
-                          paper: {
-                            style: { width: 200 },
-                          },
-                        }}
-                        onClose={handleCloseMenu}
-                      >
-                        {selectedProtocoloId && estado !== 3 && (
-                          <>
-                            <MenuItem onClick={() => handleOpenPaymentDialog(selectedProtocoloId)}>Acreditar Pago</MenuItem>
-                            <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Editar protocolo</MenuItem>
-                            <MenuItem onClick={handleOpenEncabezadoDialog}>Editar Encabezado</MenuItem>
-                          </>
-                        )}
-                        {selectedProtocoloId && estado === 3 && (
-                          <>
-                          <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Ver</MenuItem>
-                          <MenuItem onClick={() => handleDownload(selectedProtocoloId)}>Descargar</MenuItem>
-                          </>
-                        )}
-                        <MenuItem onClick={() => handleDelete(selectedProtocoloId)}>Eliminar</MenuItem>
-                      </Menu>
-
-                        {/* Diálogo con formulario */}
-                        <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-                          <DialogTitle>Editar Protocolo N° ({selectedProtocoloId})</DialogTitle>
-                          <DialogContent>
-                            <Stepper activeStep={activeStep}>
-                              {steps.map((label) => (
-                                <Step key={label}>
-                                  <StepLabel>{label}</StepLabel>
-                                </Step>
-                              ))}
-                            </Stepper>
-                            {renderFormContent(activeStep)}
-                          </DialogContent>
-                          <DialogActions>
-                            <Button onClick={handleCloseDialog} color="primary">
-                              Cancelar
-                            </Button>
-                            <Button
-                              disabled={activeStep === 0}
-                              onClick={handleBack}
-                              color="primary"
-                            >
-                              Atrás
-                            </Button>
-                            <Button
-                              disabled={activeStep === steps.length - 1}
-                              onClick={handleNext}
-                              color="primary"
-                            >
-                              Siguiente
-                            </Button>
-                            {activeStep === steps.length - 1 && selectedProtocoloId && estado !== 3 && (
-                            <>
-                              <Button onClick={handleSave} color="primary">
-                                Guardar
-                              </Button>
-                              <Button onClick={handleOpenConfirmDialog} color="primary">
-                                Finalizar
-                              </Button>
-                            </>
-                          )}
-                          </DialogActions>
-                        </Dialog>
-                    </TableCell>
+      <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <header style={{ flexShrink: 0 }}> {/* Aquí puedes agregar un encabezado si es necesario */}</header>
+        <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, overflow: 'auto' }}> {/* Contenedor de la tabla con scroll interno */}
+            <TableContainer component={Paper} sx={{ height: '63vh', margin: '0 auto', display: 'flex', flexDirection: 'column' }}>
+              <Table stickyHeader
+              sx={{
+                '& th': { fontWeight: 'bold', textAlign: 'center', borderBottom: '2px solid #ccc' },
+                '& td': { textAlign: 'center' },
+                border: '1px solid #ccc',
+              }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Estado</TableCell>
+                    <TableCell>Número de Protocolo</TableCell>
+                    <TableCell>Emisión</TableCell>
+                    <TableCell>Análisis Solicitado</TableCell>
+                    <TableCell>Importe</TableCell>
+                    <TableCell></TableCell>
                   </TableRow>
-                );
-              })}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {data
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((row, index) => {
+                      const precioEstudio = row.Estudio.Precios[0].precio;
+                      const formatCurrency = (amount) => {
+                        return new Intl.NumberFormat('es-ES', {
+                          style: 'currency',
+                          currency: 'ARS',
+                        }).format(amount);
+                      };
+                      
+                      let importeColor = '';
+                      if (row.importe === precioEstudio) {
+                        importeColor = 'rgb(91, 189, 91)';
+                      } else if (row.importe > 0 && row.importe < precioEstudio) {
+                        importeColor = 'rgb(248, 248, 108)'; 
+                      } else if (row.importe === 0) {
+                        importeColor = 'rgb(243, 71, 71)'; 
+                      }
 
-      {/* Paginación */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
-        <Select
-          value={rowsPerPage}
-          onChange={handleRowsPerPageChange}
-          displayEmpty
-          inputProps={{ "aria-label": "Registros por página" }}
-        >
-          <MenuItem value={5}>5</MenuItem>
-          <MenuItem value={10}>10</MenuItem>
-          <MenuItem value={20}>20</MenuItem>
-        </Select>
-      </Box>
+                      const formattedDate = row.fecha.split('-').reverse().join('/');
+
+                      return (
+                        <TableRow key={index}
+                        sx={{
+                          backgroundColor: index % 2 === 0 ? '#f5f5f5' : 'white', 
+                          '&:hover': {
+                            backgroundColor: '#e0f2f1'
+                          },
+                        }}>
+                          <TableCell>{estadosMap[row.id_estado] || 'Desconocido'}</TableCell>
+                          <TableCell>{row.id_protocolo}</TableCell>
+                          <TableCell>{formattedDate}</TableCell>
+                          <TableCell>{estudiosMap[row.id_estudio] || 'Desconocido'}</TableCell>
+                          <TableCell style={{ backgroundColor: importeColor, textAlign: 'center', fontWeight: 'bold' }}>
+                              {formatCurrency(row.importe)}
+                          </TableCell>
+                          <TableCell>
+                              <IconButton onClick={(event) => handleClick(event, row.id_protocolo, row.id_estado)}>
+                                <MoreVertIcon />
+                              </IconButton>
+                              <Menu
+                              anchorEl={anchorEl}
+                              open={openMenu}
+                              slotProps={{
+                                paper: {
+                                  style: { width: 200 },
+                                },
+                              }}
+                              onClose={handleCloseMenu}
+                            >
+                              {selectedProtocoloId && estado !== 3 && (
+                                <>
+                                  <MenuItem onClick={() => handleOpenPaymentDialog(selectedProtocoloId)}>Acreditar Pago</MenuItem>
+                                  <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Editar protocolo</MenuItem>
+                                  <MenuItem onClick={handleOpenEncabezadoDialog}>Editar Encabezado</MenuItem>
+                                </>
+                              )}
+                              {selectedProtocoloId && estado === 3 && (
+                                <>
+                                <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Ver</MenuItem>
+                                <MenuItem onClick={() => handleDownload(selectedProtocoloId)}>Descargar</MenuItem>
+                                </>
+                              )}
+                              <MenuItem onClick={() => handleDelete(selectedProtocoloId)}>Eliminar</MenuItem>
+                            </Menu>
+
+                              {/* Diálogo con formulario */}
+                              <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+                                <DialogTitle>Editar Protocolo N° ({selectedProtocoloId})</DialogTitle>
+                                <DialogContent>
+                                  <Stepper activeStep={activeStep}>
+                                    {steps.map((label) => (
+                                      <Step key={label}>
+                                        <StepLabel>{label}</StepLabel>
+                                      </Step>
+                                    ))}
+                                  </Stepper>
+                                  {renderFormContent(activeStep)}
+                                </DialogContent>
+                                <DialogActions>
+                                  <Button onClick={handleCloseDialog} color="primary">
+                                    Cancelar
+                                  </Button>
+                                  <Button
+                                    disabled={activeStep === 0}
+                                    onClick={handleBack}
+                                    color="primary"
+                                  >
+                                    Atrás
+                                  </Button>
+                                  <Button
+                                    disabled={activeStep === steps.length - 1}
+                                    onClick={handleNext}
+                                    color="primary"
+                                  >
+                                    Siguiente
+                                  </Button>
+                                  {activeStep === steps.length - 1 && selectedProtocoloId && estado !== 3 && (
+                                  <>
+                                    <Button onClick={handleSave} color="primary">
+                                      Guardar
+                                    </Button>
+                                    <Button onClick={handleOpenConfirmDialog} color="primary">
+                                      Finalizar
+                                    </Button>
+                                  </>
+                                )}
+                                </DialogActions>
+                              </Dialog>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25]}
+              component="div"
+              count={data.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              labelRowsPerPage="Registros por página:"
+            />
+          </div>
+        </main>
+      </div>
 
       <Dialog open={openPaymentDialog} onClose={handleClosePaymentDialog} maxWidth="sm" fullWidth>
         <DialogTitle>Acreditar Pago para Protocolo N° {selectedProtocoloId || ''}</DialogTitle>
