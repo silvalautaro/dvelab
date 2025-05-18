@@ -1217,15 +1217,25 @@ useEffect(() => {
   return (
 
     <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: 'calc(100vh - 90px)',
+      minHeight: 'calc(100vh - 80px)',
+      overflow: 'hidden', 
       '& .MuiTablePagination-selectLabel': {
         fontWeight: 'bold',
       }}}>
       {/* Encabezado con Totales */}
-      <h1>Cuentas Pendientes</h1>
-      <hr />
-
+      <Box sx={{ flex: '0 0 auto' }}>
+        <h1>Cuentas Pendientes</h1>
+        <hr />
+      </Box>
       {/* Filtros */}
-      <Box display="flex" justifyContent="space-between" mb={2} marginTop="40px">
+      <Box display="flex"
+        justifyContent="space-between"
+        mb={2}
+        mt={2}
+        sx={{ flex: '0 0 auto', px: 2 }}>
       <Box display="flex" gap={2}>
         <TextField
           label="Desde"
@@ -1300,6 +1310,12 @@ useEffect(() => {
 </Box>
 
       {/* Tabla */}
+       <Box sx={{
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              height:'calc(100vh - 320px)',
+            }}>
       <TableContainer component={Paper}
       sx={{ height: '50vh', margin: '0 auto', display: 'flex', flexDirection: 'column' }}
       >
@@ -1365,8 +1381,10 @@ useEffect(() => {
 
         </Table>
       </TableContainer>
+      </Box>
 
       {/* Paginación */}
+      <Box sx={{ flexShrink: 0, py: 1 }}>
         <TablePagination
           rowsPerPageOptions={[5, 10, 20]}
           component="div"
@@ -1378,6 +1396,7 @@ useEffect(() => {
           labelRowsPerPage="Registros por página"
           labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
         />
+        </Box>
 
       <Dialog open={openPaymentDialog} onClose={handleClosePaymentDialog} maxWidth="sm" fullWidth>
         <DialogTitle>Acreditar Pago para Protocolo N° ({selectedProtocoloId})</DialogTitle>

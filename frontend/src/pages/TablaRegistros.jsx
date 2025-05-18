@@ -24,7 +24,7 @@ import {
   DialogContentText,
   TablePagination,
 } from "@mui/material";
-import { Box } from "@mui/system";
+import { Box, width } from "@mui/system";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -1501,12 +1501,23 @@ const handleCloseEncabezadoDialog = () => {
 
   return (
     <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: 'calc(100vh - 90px)',
+      minHeight: 'calc(100vh - 80px)',
+      overflow: 'hidden', 
       '& .MuiTablePagination-selectLabel': {
         fontWeight: 'bold',
       }}}>
-      <h1>Tabla de registros</h1>
-      <hr />
-      <Box display="flex" justifyContent="space-between" mb={2} marginTop="40px">
+       <Box sx={{ flex: '0 0 auto' }}>
+        <h1>Tabla de registros</h1>
+        <hr />
+      </Box>
+      <Box display="flex"
+        justifyContent="space-between"
+        mb={2}
+        mt={2}
+        sx={{ flex: '0 0 auto', px: 2 }}>
         <Box display="flex" gap={2}>
           <TextField
             label="Desde"
@@ -1563,16 +1574,23 @@ const handleCloseEncabezadoDialog = () => {
         </Box>
       </Box>
 
-      <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <header style={{ flexShrink: 0 }}> {/* Aquí puedes agregar un encabezado si es necesario */}</header>
-        <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ flex: 1, overflow: 'auto' }}> {/* Contenedor de la tabla con scroll interno */}
-            <TableContainer component={Paper} sx={{ height: '63vh', margin: '0 auto', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        height:'calc(100vh - 320px)',
+      }}>
+      <TableContainer component={Paper}
+      sx={{
+        overflow: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        border: '1px solid #ccc'
+      }}>
               <Table stickyHeader
               sx={{
                 '& th': { fontWeight: 'bold', textAlign: 'center', borderBottom: '2px solid #ccc' },
-                '& td': { textAlign: 'center' },
-                border: '1px solid #ccc',
+                '& td': { textAlign: 'center' }
               }}>
                 <TableHead>
                   <TableRow>
@@ -1702,19 +1720,19 @@ const handleCloseEncabezadoDialog = () => {
                 </TableBody>
               </Table>
             </TableContainer>
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25]}
-              component="div"
-              count={data.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              labelRowsPerPage="Registros por página:"
-            />
-          </div>
-        </main>
-      </div>
+      </Box>
+      <Box sx={{ flexShrink: 0, py: 1 }}>
+        <TablePagination
+                rowsPerPageOptions={[5, 10, 25]}
+                component="div"
+                count={data.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                labelRowsPerPage="Registros por página:"
+              />
+      </Box>
 
       <Dialog open={openPaymentDialog} onClose={handleClosePaymentDialog} maxWidth="sm" fullWidth>
         <DialogTitle>Acreditar Pago para Protocolo N° {selectedProtocoloId || ''}</DialogTitle>

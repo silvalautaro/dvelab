@@ -159,6 +159,7 @@ const FormularioIngresos = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     width: '100%',
+                    height: 'calc(100vh - 120px)', // Ajusta la altura para adaptarse a cualquier pantalla
                     padding: '16px',
                 }}
             >
@@ -180,8 +181,7 @@ const FormularioIngresos = () => {
                         padding: '16px',
                         backgroundColor: '#f9f9f9',
                         borderRadius: '8px',
-                        boxShadow: '0 0 10px rgba(0,0,0,0.1)',
-                        marginTop: '50px'
+                        boxShadow: '0 0 10px rgba(0,0,0,0.1)'
                     }}
                 >
                     <Grid container spacing={2}>

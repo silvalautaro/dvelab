@@ -29,7 +29,7 @@ const App = () => {
                             <Navbar />
                             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
                                 <Sidebar />
-                                <div style={{ flex: 1, padding: '16px', overflow: 'auto' }}>
+                                <div style={{flex: 1, padding: '16px', overflow: 'auto' }}>
                                     <Routes>
                                         {/* Logo centrado solo en /dashboard */}
                                         <Route path="" element={
