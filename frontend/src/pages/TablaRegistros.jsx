@@ -1654,20 +1654,24 @@ const handleCloseEncabezadoDialog = () => {
                               }}
                               onClose={handleCloseMenu}
                             >
-                              {selectedProtocoloId && estado !== 3 && (
+                              {selectedProtocoloId && (
                                 <>
                                   <MenuItem onClick={() => handleOpenPaymentDialog(selectedProtocoloId)}>Acreditar Pago</MenuItem>
-                                  <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Editar protocolo</MenuItem>
-                                  <MenuItem onClick={handleOpenEncabezadoDialog}>Editar Encabezado</MenuItem>
+                                  {estado !== 3 && (
+                                    <>
+                                      <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Editar protocolo</MenuItem>
+                                      <MenuItem onClick={handleOpenEncabezadoDialog}>Editar Encabezado</MenuItem>
+                                    </>
+                                  )}
+                                  {estado === 3 && (
+                                    <>
+                                      <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Ver</MenuItem>
+                                      <MenuItem onClick={() => handleDownload(selectedProtocoloId)}>Descargar</MenuItem>
+                                    </>
+                                  )}
+                                  <MenuItem onClick={() => handleDelete(selectedProtocoloId)}>Eliminar</MenuItem>
                                 </>
                               )}
-                              {selectedProtocoloId && estado === 3 && (
-                                <>
-                                <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Ver</MenuItem>
-                                <MenuItem onClick={() => handleDownload(selectedProtocoloId)}>Descargar</MenuItem>
-                                </>
-                              )}
-                              <MenuItem onClick={() => handleDelete(selectedProtocoloId)}>Eliminar</MenuItem>
                             </Menu>
 
                               {/* Diálogo con formulario */}
