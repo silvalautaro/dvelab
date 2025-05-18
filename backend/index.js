@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const sequelize = require('./db/config');
 const pdf = require('pdfkit');
+const path = require('path');
 require('dotenv').config();
 
 const { 
@@ -67,9 +68,12 @@ app.use('/api/pagos', pagoRoutes);
 app.use('/api/status', (req, res) => {
   res.json({ status: 'API en línea' });
 });
+app.use(express.static(path.join(__dirname, '../frontend/build')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/build/index.html'));
+});
 
-
-const PORT =  process.env.PORT || 3001;
+const PORT =  process.env.PORT || 3005;
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
