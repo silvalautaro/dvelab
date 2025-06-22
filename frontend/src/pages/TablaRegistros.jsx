@@ -30,6 +30,8 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import logoUrl from '../assets/logo.png';
 import firmaUrl from '../assets/firma.png';
+import referenciaHemo from '../assets/referenciaHemo.png';
+import referenciaFL from '../assets/referenciaFL.png';
 import axios from 'axios';
 
 const steps = ['Hemograma', 'Fórmula Leucocitaria', 'Bioquimica Sanguinea', 'Coagulograma'];
@@ -97,9 +99,9 @@ const TextFieldGroupWithRelAbs = ({ labels, data, handleChange, handleObservacio
             margin="dense"
             id={`${id}-relativa`}
             label="Relativa"
-            type="text"
+            type="number"
             variant="standard"
-            value={data[`${id}-relativa`] || ''}
+            value={data[`${id}-relativa`] ?? ''}
             onChange={(e) => handleChange(e, index, 'relativa')}
             inputRef={(el) => (fieldRefs.current[index] = el)}
             onKeyDown={(event) => handleKeyDown(event, index)}
@@ -110,9 +112,9 @@ const TextFieldGroupWithRelAbs = ({ labels, data, handleChange, handleObservacio
             margin="dense"
             id={`${id}-absoluta`}
             label="Absoluta"
-            type="text"
+            type="number"
             variant="standard"
-            value={data[`${id}-absoluta`] || ''}
+            value={data[`${id}-absoluta`] ?? ''}
             onChange={(e) => handleChange(e, index, 'absoluta')}
             inputRef={(el) => (fieldRefs.current[index + labels.length] = el)}
             onKeyDown={(event) => handleKeyDown(event, index + labels.length)}
@@ -121,17 +123,19 @@ const TextFieldGroupWithRelAbs = ({ labels, data, handleChange, handleObservacio
         </Box>
       );
     })}
-    <TextField
-      margin="dense"
-      id="observaciones"
-      label="Observaciones"
-      type="text"
-      fullWidth
-      variant="standard"
-      value={data['observaciones'] || ''}
-      onChange={handleObservacionesChange}
-      disabled={disabled}
-    />
+    <Box mt={2}>
+      <TextField
+        margin="dense"
+        id="observaciones"
+        label="Observaciones"
+        type="text"
+        fullWidth
+        variant="standard"
+        value={data['observaciones'] || ''}
+        onChange={handleObservacionesChange}
+        disabled={disabled}
+      />
+    </Box>
   </div>
 );
 
@@ -544,9 +548,6 @@ const handleCloseEncabezadoDialog = () => {
         chcm: convertToNumberOrNull(hemogramaData['chcm']),
         rdw: convertToNumberOrNull(hemogramaData['rdw']),
         indice_reticulocitario: convertToNumberOrNull(hemogramaData['indice-reticulocitario']),
-        recuento_plaquetario: convertToNumberOrNull(hemogramaData['recuento-plaquetario']),
-        frotis: hemogramaData['frotis'] || null,
-        recuento_leucocitario: convertToNumberOrNull(hemogramaData['recuento-leucocitario']),
         caracteristicas_serie_eritroide: hemogramaData['caracteristicas-serie-eritroide'] || null,
         observaciones: hemogramaData['observaciones'] || null,
         morfologia_plaquetaria: hemogramaData['morfologia-plaquetaria'] || null
@@ -591,7 +592,10 @@ const handleCloseEncabezadoDialog = () => {
         id_protocolo: selectedProtocoloId,
         relativa: convertToNumberOrNull(formulaLeucocitariaData[`${removeAccents(tc.tipo_celula.toLowerCase().replace(/ /g, '-'))}-relativa`]),
         absoluta: convertToNumberOrNull(formulaLeucocitariaData[`${removeAccents(tc.tipo_celula.toLowerCase().replace(/ /g, '-'))}-absoluta`]),
-        observaciones: formulaLeucocitariaData['observaciones'] || null
+        observaciones: formulaLeucocitariaData['observaciones'] || null,
+        recuento_plaquetario: convertToNumberOrNull(formulaLeucocitariaData['recuento-plaquetario']),
+        frotis: formulaLeucocitariaData['frotis'] || null,
+        recuento_leucocitario: convertToNumberOrNull(formulaLeucocitariaData['recuento-leucocitario']),
       }));
 
       // Verificar si los datos ya existen
@@ -735,9 +739,6 @@ const handleCloseEncabezadoDialog = () => {
           'chcm': hemograma.chcm || '',
           'rdw': hemograma.rdw || '',
           'indice-reticulocitario': hemograma.indice_reticulocitario || '',
-          'recuento-plaquetario': hemograma.recuento_plaquetario || '',
-          'frotis': hemograma.frotis || '',
-          'recuento-leucocitario': hemograma.recuento_leucocitario || '',
           'caracteristicas-serie-eritroide': hemograma.caracteristicas_serie_eritroide || '',
           'observaciones': hemograma.observaciones || '',
           'morfologia-plaquetaria': hemograma.morfologia_plaquetaria || ''
@@ -760,7 +761,13 @@ const handleCloseEncabezadoDialog = () => {
           return acc;
         }, {});
 
-        setFormulaLeucocitariaData({ ...mappedFormulaLeucocitaria, observaciones: formulaLeucocitaria[0]?.observaciones || null });
+        setFormulaLeucocitariaData({ 
+          ...mappedFormulaLeucocitaria, 
+          observaciones: formulaLeucocitaria[0]?.observaciones || null,
+          'recuento-leucocitario': formulaLeucocitaria[0]?.recuento_leucocitario || '',
+          'recuento-plaquetario': formulaLeucocitaria[0]?.recuento_plaquetario || '',
+          frotis: formulaLeucocitaria[0]?.frotis || null
+        });
 
 
         const mappedBioquimicaSanguinea = {
@@ -844,9 +851,6 @@ const handleCloseEncabezadoDialog = () => {
         chcm: calculateCHCM(hemogramaData['hemoglobina'], hemogramaData['hematocrito']),
         rdw: convertToNumberOrNull(hemogramaData['rdw']),
         indice_reticulocitario: convertToNumberOrNull(hemogramaData['indice-reticulocitario']),
-        recuento_plaquetario: convertToNumberOrNull(hemogramaData['recuento-plaquetario']),
-        frotis: hemogramaData['frotis'] || null,
-        recuento_leucocitario: convertToNumberOrNull(hemogramaData['recuento-leucocitario']),
         caracteristicas_serie_eritroide: hemogramaData['caracteristicas-serie-eritroide'] || null,
         observaciones: hemogramaData['observaciones'] || null,
         morfologia_plaquetaria: hemogramaData['morfologia-plaquetaria'] || null
@@ -893,7 +897,10 @@ const handleCloseEncabezadoDialog = () => {
         id_protocolo: selectedProtocoloId,
         relativa: convertToNumberOrNull(formulaLeucocitariaData[`${removeAccents(tc.tipo_celula.toLowerCase().replace(/ /g, '-'))}-relativa`]),
         absoluta: convertToNumberOrNull(formulaLeucocitariaData[`${removeAccents(tc.tipo_celula.toLowerCase().replace(/ /g, '-'))}-absoluta`]),
-        observaciones: formulaLeucocitariaData['observaciones'] || null
+        observaciones: formulaLeucocitariaData['observaciones'] || null,
+        recuento_plaquetario: convertToNumberOrNull(formulaLeucocitariaData['recuento-plaquetario'] || null),
+        frotis: formulaLeucocitariaData['frotis'] || null,
+        recuento_leucocitario: convertToNumberOrNull(formulaLeucocitariaData['recuento-leucocitario'] || null),
       }));
 
       // Verificar si los datos ya existen
@@ -1000,10 +1007,27 @@ const handleCloseEncabezadoDialog = () => {
   
   const handleFormulaLeucocitariaChange = (e, index, type) => {
     const id = removeAccents(e.target.id);
-    const value = parseFloat(e.target.value);
+    let value = e.target.value;
+
+    if (value === '') value = '';
+    else value = Number(value);
+    
+    
     const updatedData = { ...formulaLeucocitariaData, [id]: value };
-  
+
     if (type === 'relativa') {
+      // Validar suma de relativas <= 100
+      let sumaRelativas = 0;
+      Object.keys(updatedData).forEach(key => {
+        if (key.endsWith('-relativa')) {
+          const v = Number(updatedData[key]);
+          if (!isNaN(v)) sumaRelativas += v;
+        }
+      });
+      if (sumaRelativas > 100) {
+        alert('La suma de los valores relativos no debe superar el 100%.');
+        return;
+      }
       const recuentoLeucocitario = hemogramaData['recuento-leucocitario'] || 0;
       const relativaId = id;
       const absolutaId = relativaId.replace('relativa', 'absoluta');
@@ -1156,7 +1180,8 @@ const handleCloseEncabezadoDialog = () => {
         ['Especie', especie || ''],
         ['Raza', raza || ''],
         ['Sexo', sexo || ''],
-        ['Edad', paciente.edad || '']]
+        ['Edad', paciente.edad || 0]
+        ]
       });      
       
       // Función para generar tablas con estilo
@@ -1184,9 +1209,9 @@ const handleCloseEncabezadoDialog = () => {
         ["CHCM", hemograma.chcm || '', "%", "31 - 36", "29 - 36"],
         ["RDW", hemograma.rdw || '', "%", "12 - 16", "14 - 18"],
         ["Índice Reticulocitario", hemograma.indice_reticulocitario || '', "-", { content: ">2 Regenerativa\n<2 Arregenerativa", colSpan: 2 }], // Unir columnas,
-        ["Recuento Plaquetario", hemograma.recuento_plaquetario || '', "K/ul", "180000 - 400000", "200000 - 500000"],
-        ["Frotis", hemograma.frotis || '', "-", "-", "-"],
-        ["Recuento Leucocitario", hemograma.recuento_leucocitario || '', "K/ul", "6000-13000", "5500 - 14000"]
+        ["Recuento Plaquetario", formulaLeucocitaria[0]?.recuento_plaquetario || '', "K/ul", "180000 - 400000", "200000 - 500000"],
+        ["Frotis", formulaLeucocitaria[0]?.frotis || '', "-", "-", "-"],
+        ["Recuento Leucocitario", formulaLeucocitaria[0]?.recuento_leucocitario || '', "K/ul", "6000-13000", "5500 - 14000"]
       ]);
       
       // Observaciones - Hemograma
@@ -1340,6 +1365,7 @@ const handleCloseEncabezadoDialog = () => {
       const pageCount = doc.getNumberOfPages(); // Obtiene el número total de páginas
       const pageWidth = doc.internal.pageSize.width; // Ancho de la página
       const emailText = "E-mail: diagnovete.lab@gmail.com";
+     
       const emailX = (pageWidth - doc.getTextWidth(emailText)) / 2; // Centrar el texto
 
       // Recorre todas las páginas y agrega el pie de página
@@ -1438,35 +1464,80 @@ const handleCloseEncabezadoDialog = () => {
     }
   };
 
+  const hemogramaLabels = [
+    'Recuento Glóbulos Rojos', 'Hemoglobina', 'Hematocrito', 'vcm', 'hcm', 'chcm', 'RDW', 'Índice Reticulocitario', 'Características serie eritroide', 'Morfología plaquetaria', 'Observaciones' 
+  ];
+
+  const formulaLeucocitariaExtraLabels = [
+    'Recuento Plaquetario', 'Frotis', 'Recuento Leucocitario'
+  ];
+
+  const formulaLeucocitariaLabels = [
+    'Neutrófilos Segmentados',
+    'Neutrófilos en banda',
+    'Eosinófilos',
+    'Basófilos',
+    'Linfocitos',
+    'Monocitos',
+    'Formas Juveniles'
+  ];
+
   const renderFormContent = (step) => {
     const isDisabled = estado === 3;
+    // Estilos flotantes para las imágenes
+    const floatingImgStyle = {
+      position: 'fixed',
+      top: 210,
+      right: 110,
+      zIndex: 1300,
+      maxWidth: 400,
+      borderRadius: 8,
+      boxShadow: '0 2px 16px #0004',
+      background: '#fff',
+      padding: 8,
+      border: '1px solid #eee',
+    };
     switch (step) {
       case 0:
         return (
-          <TextFieldGroup
-            labels={[
-              'Recuento Glóbulos Rojos', 'Hemoglobina', 'Hematocrito', 'RDW', 'Índice Reticulocitario', 'Recuento Plaquetario', 'Frotis', 'Recuento Leucocitario', 'Características serie eritroide', 'Observaciones', 'Morfología plaquetaria'
-            ]}
-            data={hemogramaData}
-            handleChange={handleHemogramaChange}
-            fieldRefs={fieldRefs}
-            handleKeyDown={handleKeyDown}
-            disabled={isDisabled}
-          />
+          <>
+            <Box>
+              <TextFieldGroup
+                labels={hemogramaLabels}
+                data={hemogramaData}
+                handleChange={handleHemogramaChange}
+                fieldRefs={fieldRefs}
+                handleKeyDown={handleKeyDown}
+                disabled={isDisabled}
+              />
+            </Box>
+            <img src={referenciaHemo} alt="Referencia Hemograma" style={floatingImgStyle} />
+          </>
         );
       case 1:
-        return tipoCelulas.length > 0 ? (
-          <TextFieldGroupWithRelAbs 
-            labels={tipoCelulas.map(tc => tc.tipo_celula)} 
-            data={formulaLeucocitariaData} 
-            handleChange={handleFormulaLeucocitariaChange} 
-            handleObservacionesChange={handleObservacionesChange}
-            fieldRefs={fieldRefs} 
-            handleKeyDown={handleKeyDown} 
-            disabled={isDisabled}
-          />
-        ) : (
-          <p>Cargando tipos de células...</p>
+        return (
+          <>
+            <Box>
+              <TextFieldGroupWithRelAbs 
+                labels={formulaLeucocitariaLabels}
+                data={formulaLeucocitariaData} 
+                handleChange={handleFormulaLeucocitariaChange} 
+                handleObservacionesChange={handleObservacionesChange}
+                fieldRefs={fieldRefs} 
+                handleKeyDown={handleKeyDown} 
+                disabled={isDisabled}
+              />
+              <TextFieldGroup
+                labels={formulaLeucocitariaExtraLabels}
+                data={formulaLeucocitariaData}
+                handleChange={handleFormulaLeucocitariaChange}
+                fieldRefs={fieldRefs}
+                handleKeyDown={handleKeyDown}
+                disabled={isDisabled}
+              />
+            </Box>
+            <img src={referenciaFL} alt="Referencia Fórmula Leucocitaria" style={floatingImgStyle} />
+          </>
         );
       case 2:
         return (
@@ -1660,7 +1731,7 @@ const handleCloseEncabezadoDialog = () => {
                                   {estado !== 3 && (
                                     <>
                                       <MenuItem onClick={() => handleOpenDialog(selectedProtocoloId)}>Editar protocolo</MenuItem>
-                                      <MenuItem onClick={handleOpenEncabezadoDialog}>Editar Encabezado</MenuItem>
+                                      <MenuItem onClick={() => handleOpenEncabezadoDialog(selectedProtocoloId)}>Editar Encabezado</MenuItem>
                                     </>
                                   )}
                                   {estado === 3 && (

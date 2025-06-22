@@ -33,8 +33,6 @@ const getFormulaLeucocitariaById = async (req, res) => {
 
 const updateFormulaLeucocitariaById = async (req, res) => {
   try {
-    console.log("req.body: ", req.body);
-    
     const FormulaLeucocitaria = await updateFormulaLeucocitaria(req.params.id, req.body);
     res.json({ registro: FormulaLeucocitaria.length, result: FormulaLeucocitaria, status: 200, ok: true });
   } catch (err) {

@@ -20,13 +20,25 @@ const FormulaLeucocitaria = sequelize.define('FormulaLeucocitaria', {
         allowNull: true,
     },
     absoluta: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.DECIMAL(10,2),
         allowNull: true,
     },
     observaciones: {
         type: DataTypes.STRING,
         allowNull: true,
-    }
+    },
+    recuento_leucocitario:{
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
+    recuento_plaquetario:{
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
+    frotis: {
+        type: DataTypes.DECIMAL(5, 2),
+        allowNull: true,
+    },
     }, {
     tableName: 'formulaleucocitaria',
     timestamps: false,

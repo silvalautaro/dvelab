@@ -27,7 +27,7 @@ const validationSchema = yup.object().shape({
     species: yup.string().required('La especie es requerida'),
     breed: yup.string(),
     sex: yup.string(),
-    age: yup.number().typeError('Debe ser un número'),
+    age: yup.string(), // Permitir cualquier valor como string
     requestedAnalysis: yup.string().required('Seleccione un análisis solicitado'),
 });
 
@@ -420,7 +420,7 @@ const FormularioIngresos = () => {
                                     <TextField
                                         {...field}
                                         label="Edad"
-                                        type="number"
+                                        type="text" 
                                         error={!!errors.age}
                                         helperText={errors.age?.message}
                                         fullWidth

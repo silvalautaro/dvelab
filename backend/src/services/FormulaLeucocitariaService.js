@@ -33,7 +33,10 @@ const updateFormulaLeucocitaria = async (id_protocolo, data) => {
       return await existente.update({
         relativa: item.relativa,
         absoluta: item.absoluta,
-        observaciones: item.observaciones
+        observaciones: item.observaciones,
+        recuento_leucocitario: item.recuento_leucocitario,
+        recuento_plaquetario: item.recuento_plaquetario,
+        frotis: item.frotis
       });
     } else {
       // Crear nuevo registro si no existe
@@ -42,7 +45,10 @@ const updateFormulaLeucocitaria = async (id_protocolo, data) => {
         id_protocolo: id_protocolo,
         relativa: item.relativa,
         absoluta: item.absoluta,
-        observaciones: item.observaciones
+        observaciones: item.observaciones,
+        recuento_leucocitario: item.recuento_leucocitario,
+        recuento_plaquetario: item.recuento_plaquetario,
+        frotis: item.frotis
       });
     }
   });
