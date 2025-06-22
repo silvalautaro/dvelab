@@ -1488,7 +1488,7 @@ const handleCloseEncabezadoDialog = () => {
     const floatingImgStyle = {
       position: 'fixed',
       top: 210,
-      right: 110,
+      right: 289,
       zIndex: 1300,
       maxWidth: 400,
       borderRadius: 8,
